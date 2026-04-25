@@ -1,121 +1,104 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
+import logo from './assets/logo.png'
+import { useState } from 'react'
+import { useMatchingApp } from './hooks/useMatchingApp'
+import { TabNavigation } from './components/TabNavigation'
+import { SearchSection } from './components/SearchSection'
+import { ProfileCard } from './components/ProfileCard'
+import { ProfileDetail } from './components/ProfileDetail'
+import { UserListTab } from './components/pages/layouts/UserListTab'
+import { MyPage } from './components/pages/mypage/MyPage'
+import { User } from './types/user'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {
+    myAge,
+    setMyAge,
+    currentUser,
+    likedUsers,
+    skippedUsers,
+    activeTab,
+    setActiveTab,
+    findRandomUser,
+    handleLike,
+    handleSkip,
+    removeLiked,
+    removeSkipped,
+  } = useMatchingApp()
+
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showProfileDetail, setShowProfileDetail] = useState(false)
+
+  const handleProfileClick = (user: User) => {
+    setSelectedUser(user)
+    setShowProfileDetail(true)
+  }
+
+  const handleCloseProfileDetail = () => {
+    setShowProfileDetail(false)
+    setSelectedUser(null)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-container">
+      <h1><img src={logo} className="base" width="200" alt="SubS" /></h1>
 
-      <div className="ticks"></div>
+      <TabNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        likedCount={likedUsers.length}
+        skippedCount={skippedUsers.length}
+      />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {activeTab === 'search' && (
+        <>
+          <SearchSection
+            myAge={myAge}
+            onAgeChange={setMyAge}
+            onSearch={findRandomUser}
+          />
+          <ProfileCard
+            user={currentUser}
+            myAge={myAge}
+            onLike={handleLike}
+            onSkip={handleSkip}
+            onProfileClick={handleProfileClick}
+          />
+        </>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {activeTab === 'liked' && (
+        <UserListTab
+          users={likedUsers}
+          title={`いいねした相手 (${likedUsers.length})`}
+          onRemove={removeLiked}
+          onProfileClick={handleProfileClick}
+        />
+      )}
+
+      {activeTab === 'skipped' && (
+        <UserListTab
+          users={skippedUsers}
+          title={`スキップした相手 (${skippedUsers.length})`}
+          onRemove={removeSkipped}
+          onProfileClick={handleProfileClick}
+        />
+      )}
+
+      {activeTab === 'mypage' && (
+        <MyPage
+          likedCount={likedUsers.length}
+          skippedCount={skippedUsers.length}
+        />
+      )}
+
+      {showProfileDetail && selectedUser && (
+        <ProfileDetail
+          user={selectedUser}
+          onBack={handleCloseProfileDetail}
+        />
+      )}
+    </div>
   )
 }
 
