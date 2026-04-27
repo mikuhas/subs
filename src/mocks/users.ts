@@ -1,15 +1,23 @@
 import { User } from '../types/user'
+import profile_1 from '../assets/profile/profile_1.png'
+import profile_2 from '../assets/profile/profile_2.png'
+import profile_3 from '../assets/profile/profile_3.png'
+import profile_4 from '../assets/profile/profile_4.png'
+import profile_5 from '../assets/profile/profile_5.png'
 
-/**
- * 100人の日本人女性サンプルユーザーデータ
- * テスト・モック用のサンプルデータ
- */
-export const mockUsers: User[] = [
-  { id: 1, name: '田中花子', age: 25, bio: '音楽好きです', image: 'https://randomuser.me/api/portraits/women/1.jpg' },
-  { id: 2, name: '佐藤美咲', age: 23, bio: 'カフェめぐりが趣味', image: 'https://randomuser.me/api/portraits/women/2.jpg' },
-  { id: 3, name: '鈴木由美', age: 27, bio: 'ヨガ教室に通ってます', image: 'https://randomuser.me/api/portraits/women/3.jpg' },
-  { id: 4, name: '山田恵子', age: 24, bio: '映画好きです', image: 'https://randomuser.me/api/portraits/women/4.jpg' },
-  { id: 5, name: '伊藤麻衣', age: 26, bio: '旅行大好き！', image: 'https://randomuser.me/api/portraits/women/5.jpg' },
+const MOCK_LINES = [
+  'JR山手線', 'JR中央線', 'JR総武線', 'JR埼京線', 'JR京浜東北線',
+  '東急東横線', '東急田園都市線', '小田急線', '京王線',
+  '東京メトロ丸ノ内線', '東京メトロ銀座線', '東京メトロ半蔵門線',
+  '東京メトロ副都心線', '都営大江戸線', '西武池袋線', '東武東上線',
+]
+
+const rawUsers: Omit<User, 'line' | 'communityIds'>[] = [
+  { id: 1, name: '田中花子', age: 25, bio: '音楽好きです', image: profile_1 },
+  { id: 2, name: '佐藤美咲', age: 23, bio: 'カフェめぐりが趣味', image: profile_2 },
+  { id: 3, name: '鈴木由美', age: 27, bio: 'ヨガ教室に通ってます', image: profile_3 },
+  { id: 4, name: '山田恵子', age: 24, bio: '映画好きです', image: profile_4 },
+  { id: 5, name: '伊藤麻衣', age: 26, bio: '旅行大好き！', image: profile_5 },
   { id: 6, name: '中村由希', age: 22, bio: '読書が趣味です', image: 'https://randomuser.me/api/portraits/women/6.jpg' },
   { id: 7, name: '小林美優', age: 28, bio: 'アート鑑賞好き', image: 'https://randomuser.me/api/portraits/women/7.jpg' },
   { id: 8, name: '渡辺彩乃', age: 25, bio: 'グルメブロガー', image: 'https://randomuser.me/api/portraits/women/8.jpg' },
@@ -106,3 +114,14 @@ export const mockUsers: User[] = [
   { id: 99, name: '赤波由美', age: 25, bio: 'フリージャズ好きです', image: 'https://randomuser.me/api/portraits/women/39.jpg' },
   { id: 100, name: '赤穂美咲', age: 28, bio: 'アヴァンギャルド好き', image: 'https://randomuser.me/api/portraits/women/40.jpg' },
 ]
+
+export const mockUsers: User[] = rawUsers.map((u, i) => {
+  const c1 = (i % 18) + 1
+  const c2 = ((i * 3 + 5) % 18) + 1
+  return {
+    ...u,
+    // image: `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(u.name)}&backgroundColor=ffd5dc,ffdfbf,d1d4f9,c0aede,b6e3f4`,
+    line: MOCK_LINES[i % MOCK_LINES.length],
+    communityIds: c1 === c2 ? [c1] : [c1, c2],
+  }
+})

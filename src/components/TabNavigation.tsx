@@ -1,42 +1,48 @@
+type Tab = 'search' | 'liked' | 'messages' | 'skipped' | 'community' | 'mypage'
+
 interface TabNavigationProps {
-  activeTab: 'search' | 'liked' | 'skipped' | 'mypage'
-  onTabChange: (tab: 'search' | 'liked' | 'skipped' | 'mypage') => void
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
   likedCount: number
   skippedCount: number
+  messageCount: number
 }
+
+const TABS: { id: Tab; label: string; icon: string; getCount?: (l: number, s: number, m: number) => number }[] = [
+  { id: 'search',    label: '探す',         icon: '🔍' },
+  { id: 'liked',     label: 'いいね',       icon: '❤️',  getCount: (l) => l },
+  { id: 'messages',  label: 'メッセージ',   icon: '💬',  getCount: (_, __, m) => m },
+  { id: 'skipped',   label: 'スキップ',     icon: '⏩',  getCount: (_, s) => s },
+  { id: 'community', label: 'コミュニティ', icon: '👥' },
+  { id: 'mypage',    label: 'マイページ',   icon: '👤' },
+]
 
 export const TabNavigation = ({
   activeTab,
   onTabChange,
   likedCount,
   skippedCount,
+  messageCount,
 }: TabNavigationProps) => {
   return (
-    <div className="tabs">
-      <button
-        className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}
-        onClick={() => onTabChange('search')}
-      >
-        相手を探す
-      </button>
-      <button
-        className={`tab-button ${activeTab === 'liked' ? 'active' : ''}`}
-        onClick={() => onTabChange('liked')}
-      >
-        いいね ({likedCount})
-      </button>
-      <button
-        className={`tab-button ${activeTab === 'skipped' ? 'active' : ''}`}
-        onClick={() => onTabChange('skipped')}
-      >
-        スキップ ({skippedCount})
-      </button>
-      <button
-        className={`tab-button ${activeTab === 'mypage' ? 'active' : ''}`}
-        onClick={() => onTabChange('mypage')}
-      >
-        マイページ
-      </button>
-    </div>
+    <nav className="tabs">
+      {TABS.map(tab => {
+        const count = tab.getCount ? tab.getCount(likedCount, skippedCount, messageCount) : 0
+        return (
+          <button
+            key={tab.id}
+            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => onTabChange(tab.id)}
+            aria-label={tab.label}
+          >
+            <span className="tab-icon-wrap">
+              {tab.icon}
+              {count > 0 && <span className="tab-count">{count}</span>}
+            </span>
+            <span className="tab-label">{tab.label}</span>
+          </button>
+        )
+      })}
+    </nav>
   )
 }

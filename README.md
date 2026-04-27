@@ -71,3 +71,7 @@ export default defineConfig([
   },
 ])
 ```
+
+## MEMO
+画像を保管しておくサービス: https://www.cloudflare.com/ja-jp/developer-platform/products/r2/
+自分の画像を取り込んで服を着せるnano banana Fit Check

@@ -8,98 +8,128 @@ import { ProfileCard } from './components/ProfileCard'
 import { ProfileDetail } from './components/ProfileDetail'
 import { UserListTab } from './components/pages/layouts/UserListTab'
 import { MyPage } from './components/pages/mypage/MyPage'
+import { CommunityPage } from './components/pages/community/CommunityPage'
+import { MessagesPage } from './components/pages/messages/MessagesPage'
+import { ConversationView } from './components/pages/messages/ConversationView'
+import { LoginPage } from './components/pages/auth/LoginPage'
+import { useAuth } from './contexts/AuthContext'
+import { useMessage } from './contexts/MessageContext'
 import { User } from './types/user'
 
-function App() {
+function MainApp() {
+  const { profile } = useAuth()
+  const { conversationUserIds } = useMessage()
+
   const {
-    myAge,
-    setMyAge,
     currentUser,
     likedUsers,
     skippedUsers,
     activeTab,
     setActiveTab,
+    selectedLine,
+    setSelectedLine,
+    selectedCommunityId,
+    setSelectedCommunityId,
+    hasSearched,
     findRandomUser,
     handleLike,
     handleSkip,
     removeLiked,
     removeSkipped,
-  } = useMatchingApp()
+  } = useMatchingApp(profile?.age)
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [showProfileDetail, setShowProfileDetail] = useState(false)
-
-  const handleProfileClick = (user: User) => {
-    setSelectedUser(user)
-    setShowProfileDetail(true)
-  }
-
-  const handleCloseProfileDetail = () => {
-    setShowProfileDetail(false)
-    setSelectedUser(null)
-  }
+  const [conversationUser, setConversationUser] = useState<User | null>(null)
 
   return (
     <div className="app-container">
-      <h1><img src={logo} className="base" width="200" alt="SubS" /></h1>
+      <header className="app-header">
+        <h1><img src={logo} className="base" width="160" alt="SubS" /></h1>
+      </header>
 
       <TabNavigation
         activeTab={activeTab}
         onTabChange={setActiveTab}
         likedCount={likedUsers.length}
         skippedCount={skippedUsers.length}
+        messageCount={conversationUserIds.length}
       />
 
-      {activeTab === 'search' && (
-        <>
-          <SearchSection
-            myAge={myAge}
-            onAgeChange={setMyAge}
-            onSearch={findRandomUser}
+      <main className="app-main">
+        {activeTab === 'search' && (
+          <>
+            <SearchSection
+              profileAge={profile?.age}
+              selectedLine={selectedLine}
+              onLineChange={setSelectedLine}
+              selectedCommunityId={selectedCommunityId}
+              onCommunityChange={setSelectedCommunityId}
+              onSearch={findRandomUser}
+            />
+            <ProfileCard
+              user={currentUser}
+              hasSearched={hasSearched}
+              onLike={handleLike}
+              onSkip={handleSkip}
+              onProfileClick={user => setSelectedUser(user)}
+            />
+          </>
+        )}
+
+        {activeTab === 'liked' && (
+          <UserListTab
+            users={likedUsers}
+            title={`いいねした相手 (${likedUsers.length})`}
+            showMessageButton
+            onRemove={removeLiked}
+            onProfileClick={user => setSelectedUser(user)}
+            onMessage={user => setConversationUser(user)}
           />
-          <ProfileCard
-            user={currentUser}
-            myAge={myAge}
-            onLike={handleLike}
-            onSkip={handleSkip}
-            onProfileClick={handleProfileClick}
+        )}
+
+        {activeTab === 'messages' && (
+          <MessagesPage
+            likedUsers={likedUsers}
+            onOpenConversation={user => setConversationUser(user)}
           />
-        </>
-      )}
+        )}
 
-      {activeTab === 'liked' && (
-        <UserListTab
-          users={likedUsers}
-          title={`いいねした相手 (${likedUsers.length})`}
-          onRemove={removeLiked}
-          onProfileClick={handleProfileClick}
-        />
-      )}
+        {activeTab === 'skipped' && (
+          <UserListTab
+            users={skippedUsers}
+            title={`スキップした相手 (${skippedUsers.length})`}
+            onRemove={removeSkipped}
+            onProfileClick={user => setSelectedUser(user)}
+          />
+        )}
 
-      {activeTab === 'skipped' && (
-        <UserListTab
-          users={skippedUsers}
-          title={`スキップした相手 (${skippedUsers.length})`}
-          onRemove={removeSkipped}
-          onProfileClick={handleProfileClick}
-        />
-      )}
+        {activeTab === 'community' && <CommunityPage />}
 
-      {activeTab === 'mypage' && (
-        <MyPage
-          likedCount={likedUsers.length}
-          skippedCount={skippedUsers.length}
-        />
-      )}
+        {activeTab === 'mypage' && (
+          <MyPage likedCount={likedUsers.length} skippedCount={skippedUsers.length} />
+        )}
+      </main>
 
-      {showProfileDetail && selectedUser && (
+      {selectedUser && (
         <ProfileDetail
           user={selectedUser}
-          onBack={handleCloseProfileDetail}
+          onBack={() => setSelectedUser(null)}
+        />
+      )}
+
+      {conversationUser && (
+        <ConversationView
+          user={conversationUser}
+          onClose={() => setConversationUser(null)}
         />
       )}
     </div>
   )
+}
+
+function App() {
+  const { isLoggedIn } = useAuth()
+  return isLoggedIn ? <MainApp /> : <LoginPage />
 }
 
 export default App
