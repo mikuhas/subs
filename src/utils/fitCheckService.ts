@@ -243,7 +243,7 @@ export async function fetchFitCheck(
 }
 
 export async function fetchOutfitIllustration(outfitDescription: string): Promise<string | null> {
-    const MODEL = 'gemini-3.1-flash-lite-preview';
+    const MODEL = 'gemini-2.0-flash';
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
     {
@@ -255,7 +255,7 @@ export async function fetchOutfitIllustration(outfitDescription: string): Promis
             text: `以下のファッションコーデのイラストを生成してください。シンプルな白背景のファッションスケッチスタイルで、全身コーデが分かるように描いてください。\n\n${outfitDescription}`,
           }],
         }],
-        generationConfig: { responseModalities: ['Image', 'Text'] },
+        generationConfig: { responseModalities: ['IMAGE'] },
       }),
     },
   )

@@ -93,173 +93,132 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
       <h2>マイページ</h2>
 
       <div className="mypage-profile">
-        <div className="mypage-card-image">
-          <div className="profile-image-area">
-            <img
-              src={isEditing ? editForm?.image : profile?.image}
-              alt="マイプロフィール"
-              className="profile-image"
-            />
-          </div>
-          {isEditing && (
-            <div className="avatar-options">
-              {[...AVATAR_OPTIONS, ...uploadedImages].map((url) => (
-                <img
-                  key={url}
-                  src={url}
-                  alt="アバター"
-                  className={`avatar-option ${editForm?.image === url ? 'selected' : ''}`}
-                  onClick={() => setEditForm(f => f ? { ...f, image: url } : f)}
+        {isEditing ? (
+          /* ── 編集モード ── */
+          <>
+            <div className="mypage-card-image">
+              <div className="profile-image-area">
+                <img src={editForm?.image} alt="マイプロフィール" className="profile-image" />
+              </div>
+              <div className="avatar-options">
+                {[...AVATAR_OPTIONS, ...uploadedImages].map((url) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt="アバター"
+                    className={`avatar-option ${editForm?.image === url ? 'selected' : ''}`}
+                    onClick={() => setEditForm(f => f ? { ...f, image: url } : f)}
+                  />
+                ))}
+                <button
+                  className="fitcheck-upload-circle"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="写真をアップロード"
+                >＋</button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handleImageUpload}
                 />
+              </div>
+            </div>
+
+            <div className="mypage-info">
+              <h3 className="mypage-edit-title">プロフィールを編集</h3>
+
+              <div className="mypage-field">
+                <label>名前</label>
+                <input type="text" value={editForm?.name ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, name: e.target.value } : f)} />
+              </div>
+              <div className="mypage-field">
+                <label>年齢</label>
+                <input type="number" min="18" max="99" value={editForm?.age ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, age: Number(e.target.value) } : f)} />
+              </div>
+              <div className="mypage-field">
+                <label>自己紹介</label>
+                <textarea value={editForm?.bio ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, bio: e.target.value } : f)} />
+              </div>
+              <div className="mypage-field">
+                <label>
+                  好きな沿線
+                  {linesError && <span className="field-note">（オフライン時はデフォルト路線を表示）</span>}
+                </label>
+                <select value={editForm?.preferredLine ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, preferredLine: e.target.value } : f)} disabled={linesLoading}>
+                  <option value="">{linesLoading ? '読み込み中...' : '選択してください'}</option>
+                  {lines.map((line) => <option key={line} value={line}>{line}</option>)}
+                </select>
+              </div>
+              <div className="mypage-field">
+                <label>希望の出会う場所（東京）</label>
+                <select value={editForm?.preferredMeetingArea ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, preferredMeetingArea: e.target.value } : f)}>
+                  <option value="">選択してください</option>
+                  {TOKYO_MEETING_AREAS.map((area) => <option key={area} value={area}>{area}</option>)}
+                </select>
+              </div>
+              <div className="mypage-field">
+                <label>身長 (cm)</label>
+                <input type="number" min="140" max="210" placeholder="例: 170" value={editForm?.height ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, height: e.target.value ? Number(e.target.value) : undefined } : f)} />
+              </div>
+              <div className="mypage-field">
+                <label>体型</label>
+                <select value={editForm?.bodyType ?? ''} onChange={(e) => setEditForm(f => f ? { ...f, bodyType: e.target.value || undefined } : f)}>
+                  <option value="">選択してください</option>
+                  {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="mypage-field">
+                <label>ランダムマッチ</label>
+                <button
+                  type="button"
+                  className={`random-match-toggle ${editForm?.randomMatchEnabled !== false ? 'on' : 'off'}`}
+                  onClick={() => setEditForm(f => f ? { ...f, randomMatchEnabled: !(f.randomMatchEnabled !== false) } : f)}
+                >
+                  {editForm?.randomMatchEnabled !== false ? '✅ 対象に含める' : '🚫 対象から外す'}
+                </button>
+              </div>
+
+              <div className="edit-actions">
+                <button className="save-button" onClick={handleSave}>保存</button>
+                <button className="cancel-button" onClick={handleCancel}>キャンセル</button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ── 閲覧モード ── */
+          <div className="mypage-view">
+            <div className="mypage-view-top">
+              <img src={profile?.image} alt="マイプロフィール" className="mypage-view-avatar" />
+              <div className="mypage-view-head">
+                <p className="mypage-view-name">{profile?.name || '未設定'}</p>
+                <p className="mypage-view-age">{profile?.age ? `${profile.age}歳` : '年齢未設定'}</p>
+                <button className="edit-button" onClick={handleEditStart}>編集</button>
+              </div>
+            </div>
+
+            {profile?.bio && (
+              <p className="mypage-view-bio">{profile.bio}</p>
+            )}
+
+            <div className="mypage-view-rows">
+              {[
+                { label: '沿線',      value: profile?.preferredLine },
+                { label: '出会いたいエリア', value: profile?.preferredMeetingArea },
+                { label: '身長',      value: profile?.height ? `${profile.height}cm` : undefined },
+                { label: '体型',      value: profile?.bodyType },
+                { label: 'ランダムマッチ', value: profile?.randomMatchEnabled !== false ? '対象に含める' : '対象から外す' },
+                { label: 'メール',    value: profile?.email },
+              ].map(({ label, value }) => (
+                <div key={label} className="mypage-view-row">
+                  <span className="mypage-view-label">{label}</span>
+                  <span className="mypage-view-value">{value || '未設定'}</span>
+                </div>
               ))}
-              <button
-                className="fitcheck-upload-circle"
-                onClick={() => fileInputRef.current?.click()}
-                title="写真をアップロード"
-              >
-                ＋
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: 'none' }}
-                onChange={handleImageUpload}
-              />
             </div>
-          )}
-        </div>
-
-        <div className="mypage-info">
-          <div className="mypage-info-header">
-            <h3>{isEditing ? 'プロフィールを編集' : 'あなたのプロフィール'}</h3>
-            {!isEditing && (
-              <button className="edit-button" onClick={handleEditStart}>編集</button>
-            )}
           </div>
-
-          <div className="mypage-field">
-            <label>名前</label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm?.name ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, name: e.target.value } : f)}
-              />
-            ) : (
-              <p className="mypage-value">{profile?.name || '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>年齢</label>
-            {isEditing ? (
-              <input
-                type="number"
-                min="18"
-                max="99"
-                value={editForm?.age ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, age: Number(e.target.value) } : f)}
-              />
-            ) : (
-              <p className="mypage-value">{profile?.age ? `${profile.age}歳` : '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>自己紹介</label>
-            {isEditing ? (
-              <textarea
-                value={editForm?.bio ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, bio: e.target.value } : f)}
-              />
-            ) : (
-              <p className="mypage-value">{profile?.bio || '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>
-              好きな沿線
-              {linesError && <span className="field-note">（オフライン時はデフォルト路線を表示）</span>}
-            </label>
-            {isEditing ? (
-              <select
-                value={editForm?.preferredLine ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, preferredLine: e.target.value } : f)}
-                disabled={linesLoading}
-              >
-                <option value="">{linesLoading ? '読み込み中...' : '選択してください'}</option>
-                {lines.map((line) => (
-                  <option key={line} value={line}>{line}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="mypage-value">{profile?.preferredLine || '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>希望の出会う場所（東京）</label>
-            {isEditing ? (
-              <select
-                value={editForm?.preferredMeetingArea ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, preferredMeetingArea: e.target.value } : f)}
-              >
-                <option value="">選択してください</option>
-                {TOKYO_MEETING_AREAS.map((area) => (
-                  <option key={area} value={area}>{area}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="mypage-value">{profile?.preferredMeetingArea || '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>身長 (cm)</label>
-            {isEditing ? (
-              <input
-                type="number"
-                min="140"
-                max="210"
-                placeholder="例: 170"
-                value={editForm?.height ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, height: e.target.value ? Number(e.target.value) : undefined } : f)}
-              />
-            ) : (
-              <p className="mypage-value">{profile?.height ? `${profile.height}cm` : '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>体型</label>
-            {isEditing ? (
-              <select
-                value={editForm?.bodyType ?? ''}
-                onChange={(e) => setEditForm(f => f ? { ...f, bodyType: e.target.value || undefined } : f)}
-              >
-                <option value="">選択してください</option>
-                {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            ) : (
-              <p className="mypage-value">{profile?.bodyType || '未設定'}</p>
-            )}
-          </div>
-
-          <div className="mypage-field">
-            <label>メールアドレス</label>
-            <p className="mypage-value">{profile?.email}</p>
-          </div>
-
-          {isEditing && (
-            <div className="edit-actions">
-              <button className="save-button" onClick={handleSave}>保存</button>
-              <button className="cancel-button" onClick={handleCancel}>キャンセル</button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="mypage-stats">

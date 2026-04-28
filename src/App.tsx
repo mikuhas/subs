@@ -13,6 +13,10 @@ import { MessagesPage } from './components/pages/messages/MessagesPage'
 import { ConversationView } from './components/pages/messages/ConversationView'
 import { LoginPage } from './components/pages/auth/LoginPage'
 import { FitCheckPage } from './components/pages/fitcheck/FitCheckPage'
+import { ReviewModal } from './components/ui/ReviewModal'
+import { MatchPopup } from './components/ui/MatchPopup'
+import { UserBoardPage } from './components/pages/userboard/UserBoardPage'
+import { ReviewProvider } from './contexts/ReviewContext'
 import { useAuth } from './contexts/AuthContext'
 import { useMessage } from './contexts/MessageContext'
 import { User } from './types/user'
@@ -35,18 +39,28 @@ function MainApp() {
     setSelectedCommunityId,
     hasSearched,
     findRandomUser,
+    doRandomMatch,
     handleLike,
     handleSkip,
     handleLikeBack,
+    clearNewMatch,
     dismissReceivedLike,
     removeLiked,
     removeSkipped,
     removeMatched,
+    newMatch,
   } = useMatchingApp(profile?.age)
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [boardUser, setBoardUser] = useState<User | null>(null)
   const [conversationUser, setConversationUser] = useState<User | null>(null)
   const [showFitCheck, setShowFitCheck] = useState(false)
+  const [reviewUser, setReviewUser] = useState<User | null>(null)
+
+  const openBoard = (user: User) => {
+    setSelectedUser(null)
+    setBoardUser(user)
+  }
 
   return (
     <div className="app-container">
@@ -62,63 +76,72 @@ function MainApp() {
       />
 
       <main className="app-main">
-        {activeTab === 'search' && (
+        {boardUser ? (
+          <UserBoardPage user={boardUser} onBack={() => setBoardUser(null)} />
+        ) : (
           <>
-            <SearchSection
-              profileAge={profile?.age}
-              selectedLine={selectedLine}
-              onLineChange={setSelectedLine}
-              selectedCommunityId={selectedCommunityId}
-              onCommunityChange={setSelectedCommunityId}
-              onSearch={findRandomUser}
-            />
-            <ProfileCard
-              user={currentUser}
-              hasSearched={hasSearched}
-              onLike={handleLike}
-              onSkip={handleSkip}
-              onProfileClick={user => setSelectedUser(user)}
-            />
-          </>
-        )}
+            {activeTab === 'search' && (
+              <>
+                <SearchSection
+                  profileAge={profile?.age}
+                  selectedLine={selectedLine}
+                  onLineChange={setSelectedLine}
+                  selectedCommunityId={selectedCommunityId}
+                  onCommunityChange={setSelectedCommunityId}
+                  onSearch={findRandomUser}
+                />
+                <ProfileCard
+                  user={currentUser}
+                  hasSearched={hasSearched}
+                  onLike={handleLike}
+                  onSkip={handleSkip}
+                  onProfileClick={user => setSelectedUser(user)}
+                />
+              </>
+            )}
 
-        {activeTab === 'activity' && (
-          <ActivityPage
-            matchedUsers={matchedUsers}
-            receivedLikes={receivedLikes}
-            onRemoveMatched={removeMatched}
-            onProfileClick={user => setSelectedUser(user)}
-            onMessage={user => setConversationUser(user)}
-            onLikeBack={handleLikeBack}
-            onDismiss={dismissReceivedLike}
-          />
-        )}
-
-        {activeTab === 'messages' && (
-          <MessagesPage
-            matchedUsers={matchedUsers}
-            onOpenConversation={user => setConversationUser(user)}
-          />
-        )}
-
-        {activeTab === 'community' && <CommunityPage />}
-
-        {activeTab === 'mypage' && (
-          showFitCheck
-            ? (
-              <div>
-                <button className="fitcheck-back-btn" onClick={() => setShowFitCheck(false)}>← マイページに戻る</button>
-                <FitCheckPage />
-              </div>
-            )
-            : <MyPage
-                likedUsers={likedUsers}
-                skippedUsers={skippedUsers}
-                onRemoveLiked={removeLiked}
-                onRemoveSkipped={removeSkipped}
+            {activeTab === 'activity' && (
+              <ActivityPage
+                matchedUsers={matchedUsers}
+                receivedLikes={receivedLikes}
+                profileAge={profile?.age}
+                onRandomMatch={doRandomMatch}
+                onRemoveMatched={removeMatched}
                 onProfileClick={user => setSelectedUser(user)}
-                onOpenFitCheck={() => setShowFitCheck(true)}
+                onMessage={user => setConversationUser(user)}
+                onLikeBack={handleLikeBack}
+                onDismiss={dismissReceivedLike}
+                onReview={user => setReviewUser(user)}
               />
+            )}
+
+            {activeTab === 'messages' && (
+              <MessagesPage
+                matchedUsers={matchedUsers}
+                onOpenConversation={user => setConversationUser(user)}
+              />
+            )}
+
+            {activeTab === 'community' && <CommunityPage />}
+
+            {activeTab === 'mypage' && (
+              showFitCheck
+                ? (
+                  <div>
+                    <button className="fitcheck-back-btn" onClick={() => setShowFitCheck(false)}>← マイページに戻る</button>
+                    <FitCheckPage />
+                  </div>
+                )
+                : <MyPage
+                    likedUsers={likedUsers}
+                    skippedUsers={skippedUsers}
+                    onRemoveLiked={removeLiked}
+                    onRemoveSkipped={removeSkipped}
+                    onProfileClick={user => setSelectedUser(user)}
+                    onOpenFitCheck={() => setShowFitCheck(true)}
+                  />
+            )}
+          </>
         )}
       </main>
 
@@ -126,6 +149,7 @@ function MainApp() {
         <ProfileDetail
           user={selectedUser}
           onBack={() => setSelectedUser(null)}
+          onOpenBoard={openBoard}
         />
       )}
 
@@ -135,13 +159,29 @@ function MainApp() {
           onClose={() => setConversationUser(null)}
         />
       )}
+
+      {reviewUser && (
+        <ReviewModal
+          user={reviewUser}
+          onClose={() => setReviewUser(null)}
+          onSubmit={() => setReviewUser(null)}
+        />
+      )}
+
+      {newMatch && (
+        <MatchPopup user={newMatch} onClose={clearNewMatch} />
+      )}
     </div>
   )
 }
 
 function App() {
   const { isLoggedIn } = useAuth()
-  return isLoggedIn ? <MainApp /> : <LoginPage />
+  return (
+    <ReviewProvider>
+      {isLoggedIn ? <MainApp /> : <LoginPage />}
+    </ReviewProvider>
+  )
 }
 
 export default App

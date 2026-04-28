@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { User } from '../types/user'
-import { getRandomUserByAge } from '../utils/userService'
+import { getRandomUserByAge, getCompletelyRandomUser } from '../utils/userService'
 import { mockUsers } from '../data/users'
 
 export const useMatchingApp = (profileAge?: number) => {
@@ -9,6 +9,7 @@ export const useMatchingApp = (profileAge?: number) => {
   const [skippedUsers, setSkippedUsers] = useState<User[]>([])
   const [matchedUsers, setMatchedUsers] = useState<User[]>([])
   const [receivedLikes, setReceivedLikes] = useState<User[]>(() => mockUsers.slice(0, 2))
+  const [newMatch, setNewMatch] = useState<User | null>(null)
   const [activeTab, setActiveTab] = useState<'search' | 'activity' | 'messages' | 'community' | 'mypage'>('search')
   const [selectedLine, setSelectedLine] = useState('')
   const [selectedCommunityId, setSelectedCommunityId] = useState<number | ''>('')
@@ -51,6 +52,40 @@ export const useMatchingApp = (profileAge?: number) => {
     setCurrentUser(user)
   }, [profileAge, selectedLine, selectedCommunityId])
 
+  const findRandomMatchUser = useCallback(() => {
+    if (!profileAge || profileAge === 0) {
+      alert('マイページで年齢を設定してください')
+      return
+    }
+    const excludeIds = [...likedUsers.map(u => u.id), ...skippedUsers.map(u => u.id)]
+    const user = getCompletelyRandomUser(profileAge, excludeIds)
+    if (user) {
+      setCurrentUser(user)
+      setHasSearched(true)
+    } else {
+      alert('条件に合う相手が見つかりませんでした')
+    }
+  }, [profileAge, likedUsers, skippedUsers])
+
+  const doRandomMatch = useCallback(() => {
+    if (!profileAge || profileAge === 0) {
+      alert('マイページで年齢を設定してください')
+      return
+    }
+    const excludeIds = [
+      ...likedUsers.map(u => u.id),
+      ...skippedUsers.map(u => u.id),
+      ...matchedUsers.map(u => u.id),
+    ]
+    const user = getCompletelyRandomUser(profileAge, excludeIds)
+    if (user) {
+      setMatchedUsers(prev => [...prev, user])
+      setNewMatch(user)
+    } else {
+      alert('条件に合う相手が見つかりませんでした')
+    }
+  }, [profileAge, likedUsers, skippedUsers, matchedUsers])
+
   const handleLike = useCallback(() => {
     if (!currentUser || likedUsers.some(u => u.id === currentUser.id)) return
     const newLiked = [...likedUsers, currentUser]
@@ -62,8 +97,10 @@ export const useMatchingApp = (profileAge?: number) => {
     if (receivedLikes.some(u => u.id === currentUser.id)) {
       setMatchedUsers(prev => [...prev, currentUser])
       setReceivedLikes(prev => prev.filter(u => u.id !== currentUser.id))
+      setNewMatch(currentUser)
     } else if (Math.random() < 0.6) {
       setMatchedUsers(prev => [...prev, currentUser])
+      setNewMatch(currentUser)
     }
 
     findNextUser([...newLiked.map(u => u.id), ...newSkipped.map(u => u.id)])
@@ -83,7 +120,10 @@ export const useMatchingApp = (profileAge?: number) => {
     setMatchedUsers(prev => prev.some(u => u.id === user.id) ? prev : [...prev, user])
     setLikedUsers(prev => prev.some(u => u.id === user.id) ? prev : [...prev, user])
     setReceivedLikes(prev => prev.filter(u => u.id !== user.id))
+    setNewMatch(user)
   }, [])
+
+  const clearNewMatch = useCallback(() => setNewMatch(null), [])
 
   const dismissReceivedLike = useCallback((id: number) => {
     setReceivedLikes(prev => prev.filter(u => u.id !== id))
@@ -102,6 +142,7 @@ export const useMatchingApp = (profileAge?: number) => {
     skippedUsers,
     matchedUsers,
     receivedLikes,
+    newMatch,
     activeTab,
     setActiveTab,
     selectedLine,
@@ -110,12 +151,15 @@ export const useMatchingApp = (profileAge?: number) => {
     setSelectedCommunityId,
     hasSearched,
     findRandomUser,
+    findRandomMatchUser,
+    doRandomMatch,
     handleLike,
     handleSkip,
     handleLikeBack,
+    clearNewMatch,
     dismissReceivedLike,
     removeLiked,
     removeSkipped,
     removeMatched,
-  }), [currentUser, likedUsers, skippedUsers, matchedUsers, receivedLikes, activeTab, selectedLine, selectedCommunityId, hasSearched, findRandomUser, handleLike, handleSkip, handleLikeBack, dismissReceivedLike, removeLiked, removeSkipped, removeMatched])
+  }), [currentUser, likedUsers, skippedUsers, matchedUsers, receivedLikes, newMatch, activeTab, selectedLine, selectedCommunityId, hasSearched, findRandomUser, findRandomMatchUser, doRandomMatch, handleLike, handleSkip, handleLikeBack, clearNewMatch, dismissReceivedLike, removeLiked, removeSkipped, removeMatched])
 }

@@ -8,4 +8,5 @@ export interface Profile {
   preferredMeetingArea?: string
   height?: number
   bodyType?: string
+  randomMatchEnabled?: boolean
 }

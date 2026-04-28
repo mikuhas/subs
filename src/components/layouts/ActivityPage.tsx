@@ -1,14 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User } from '../../types/user'
+import { getDistanceLabel } from '../../utils/distance'
+
+const RANDOM_MATCH_LIMIT = 3
+const STORAGE_KEY = 'randomMatch'
+
+function getDailyCount(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return 0
+    const { date, count } = JSON.parse(raw)
+    return date === new Date().toDateString() ? count : 0
+  } catch {
+    return 0
+  }
+}
+
+function incrementDailyCount(): void {
+  const count = getDailyCount() + 1
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: new Date().toDateString(), count }))
+}
 
 interface ActivityPageProps {
   matchedUsers: User[]
   receivedLikes: User[]
+  profileAge?: number
+  onRandomMatch: () => void
   onRemoveMatched: (id: number) => void
   onProfileClick: (user: User) => void
   onMessage: (user: User) => void
   onLikeBack: (user: User) => void
   onDismiss: (id: number) => void
+  onReview: (user: User) => void
 }
 
 type SubTab = 'matched' | 'received'
@@ -16,16 +39,61 @@ type SubTab = 'matched' | 'received'
 export const ActivityPage = ({
   matchedUsers,
   receivedLikes,
+  profileAge,
+  onRandomMatch,
   onRemoveMatched,
   onProfileClick,
   onMessage,
   onLikeBack,
   onDismiss,
+  onReview,
 }: ActivityPageProps) => {
   const [subTab, setSubTab] = useState<SubTab>('received')
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [dailyCount, setDailyCount] = useState(getDailyCount)
+
+  useEffect(() => {
+    if (countdown === null) return
+    if (countdown === 0) {
+      incrementDailyCount()
+      setDailyCount(getDailyCount())
+      onRandomMatch()
+      setCountdown(null)
+      return
+    }
+    const t = setTimeout(() => setCountdown(c => (c ?? 1) - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown, onRandomMatch])
+
+  const handleRandomClick = () => {
+    if (!profileAge || dailyCount >= RANDOM_MATCH_LIMIT) return
+    setCountdown(3)
+  }
+
+  const remaining = RANDOM_MATCH_LIMIT - dailyCount
 
   return (
     <div>
+      {/* ランダムマッチ */}
+      <div className="random-match-section">
+        <div className="random-match-header">
+          <span className="random-match-title">🎲 ランダムマッチ</span>
+          <span className="random-match-remaining">残り {remaining}/{RANDOM_MATCH_LIMIT} 回</span>
+        </div>
+        <p className="random-match-desc">条件を超えた「運命の相手」と出会う</p>
+        {countdown !== null ? (
+          <div className="random-match-countdown">{countdown === 0 ? '✨' : countdown}</div>
+        ) : (
+          <button
+            className="random-match-btn"
+            onClick={handleRandomClick}
+            disabled={!profileAge || remaining <= 0}
+          >
+            {remaining <= 0 ? '本日の上限に達しました' : '運命の相手を探す'}
+          </button>
+        )}
+      </div>
+
       <div className="activity-subtabs">
         <button
           className={`activity-subtab ${subTab === 'received' ? 'active' : ''}`}
@@ -66,7 +134,7 @@ export const ActivityPage = ({
                   />
                   <div className="user-info">
                     <h4>{user.name}</h4>
-                    <p className="age-small">{user.age}歳 · {user.line}</p>
+                    <p className="age-small">{user.age}歳 · {getDistanceLabel(user.distanceKm)}</p>
                     <p className="bio-small">{user.bio}</p>
                   </div>
                   <div className="user-list-actions">
@@ -100,11 +168,12 @@ export const ActivityPage = ({
                   />
                   <div className="user-info">
                     <h4>{user.name}</h4>
-                    <p className="age-small">{user.age}歳 · {user.line}</p>
+                    <p className="age-small">{user.age}歳 · {getDistanceLabel(user.distanceKm)}</p>
                     <p className="bio-small">{user.bio}</p>
                   </div>
                   <div className="user-list-actions">
                     <button className="message-button" onClick={() => onMessage(user)}>💬</button>
+                    <button className="review-open-btn" onClick={() => onReview(user)}>⭐ レビュー</button>
                     <button className="remove-button" onClick={() => onRemoveMatched(user.id)}>削除</button>
                   </div>
                 </div>

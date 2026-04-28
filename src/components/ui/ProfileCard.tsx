@@ -1,4 +1,5 @@
 import { User } from '../types/user'
+import { getDistanceLabel } from '../../utils/distance'
 
 interface ProfileCardProps {
   user: User | null
@@ -29,6 +30,7 @@ export const ProfileCard = ({
         <h3>{user.name}</h3>
         <p className="age">{user.age}歳</p>
         <p className="line-badge">🚃 {user.line}</p>
+        <p className="distance-badge">{getDistanceLabel(user.distanceKm)}</p>
         <p className="bio">{user.bio}</p>
         <div className="button-group">
           <button className="action-button like" onClick={onLike}>❤️ いいね</button>

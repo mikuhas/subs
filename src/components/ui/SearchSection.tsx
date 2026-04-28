@@ -25,7 +25,7 @@ export const SearchSection = ({
 
   return (
     <div className="search-section">
-      <h2>相手を探す</h2>
+      <h2>条件で探す</h2>
 
       <div className="search-age-display">
         <span className="search-age-label">検索年齢：</span>

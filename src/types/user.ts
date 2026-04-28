@@ -4,6 +4,8 @@ export interface User {
   age: number
   bio: string
   image: string
+  subImages?: string[]
   line: string
   communityIds: number[]
+  distanceKm: number
 }

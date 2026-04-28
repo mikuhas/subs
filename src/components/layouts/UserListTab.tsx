@@ -1,4 +1,5 @@
 import { User } from '../../types/user'
+import { getDistanceLabel } from '../../utils/distance'
 
 interface UserListTabProps {
   users: User[]
@@ -36,7 +37,7 @@ export const UserListTab = ({
               />
               <div className="user-info">
                 <h4>{user.name}</h4>
-                <p className="age-small">{user.age}歳 · {user.line}</p>
+                <p className="age-small">{user.age}歳 · {user.line} · {getDistanceLabel(user.distanceKm)}</p>
                 <p className="bio-small">{user.bio}</p>
               </div>
               <div className="user-list-actions">
