@@ -1,5 +1,5 @@
 import { Community } from '../../../types/community'
-import { mockUsers } from '../../../mocks/users'
+import { mockUsers } from '../../../data/users'
 import { useCommunity } from '../../../contexts/CommunityContext'
 
 interface CommunityDetailProps {

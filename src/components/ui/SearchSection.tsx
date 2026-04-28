@@ -1,6 +1,6 @@
-import { useRailwayLines } from '../hooks/useRailwayLines'
-import { useCommunity } from '../contexts/CommunityContext'
-import { mockCommunities } from '../mocks/communities'
+import { useRailwayLines } from '../../composables/useRailwayLines'
+import { useCommunity } from '../../contexts/CommunityContext'
+import { mockCommunities } from '../../data/communities'
 
 interface SearchSectionProps {
   profileAge?: number
@@ -30,7 +30,7 @@ export const SearchSection = ({
       <div className="search-age-display">
         <span className="search-age-label">検索年齢：</span>
         {profileAge ? (
-          <span className="search-age-value">{profileAge}歳（±3歳）</span>
+          <span className="search-age-value">{profileAge}歳（±10歳）</span>
         ) : (
           <span className="search-age-unset">マイページで年齢を設定してください</span>
         )}

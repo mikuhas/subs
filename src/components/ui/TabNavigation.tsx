@@ -1,18 +1,16 @@
-type Tab = 'search' | 'liked' | 'messages' | 'skipped' | 'community' | 'mypage'
+type Tab = 'search' | 'activity' | 'messages' | 'community' | 'mypage'
 
 interface TabNavigationProps {
   activeTab: Tab
   onTabChange: (tab: Tab) => void
-  likedCount: number
-  skippedCount: number
+  receivedLikesCount: number
   messageCount: number
 }
 
-const TABS: { id: Tab; label: string; icon: string; getCount?: (l: number, s: number, m: number) => number }[] = [
+const TABS: { id: Tab; label: string; icon: string; getCount?: (received: number, msg: number) => number }[] = [
   { id: 'search',    label: '探す',         icon: '🔍' },
-  { id: 'liked',     label: 'いいね',       icon: '❤️',  getCount: (l) => l },
-  { id: 'messages',  label: 'メッセージ',   icon: '💬',  getCount: (_, __, m) => m },
-  { id: 'skipped',   label: 'スキップ',     icon: '⏩',  getCount: (_, s) => s },
+  { id: 'activity',  label: 'マッチング',   icon: '💞',  getCount: (received) => received },
+  { id: 'messages',  label: 'メッセージ',   icon: '💬',  getCount: (_, msg) => msg },
   { id: 'community', label: 'コミュニティ', icon: '👥' },
   { id: 'mypage',    label: 'マイページ',   icon: '👤' },
 ]
@@ -20,14 +18,13 @@ const TABS: { id: Tab; label: string; icon: string; getCount?: (l: number, s: nu
 export const TabNavigation = ({
   activeTab,
   onTabChange,
-  likedCount,
-  skippedCount,
+  receivedLikesCount,
   messageCount,
 }: TabNavigationProps) => {
   return (
     <nav className="tabs">
       {TABS.map(tab => {
-        const count = tab.getCount ? tab.getCount(likedCount, skippedCount, messageCount) : 0
+        const count = tab.getCount ? tab.getCount(receivedLikesCount, messageCount) : 0
         return (
           <button
             key={tab.id}

@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useCommunity } from '../../../contexts/CommunityContext'
 import { Profile } from '../../../types/profile'
-import { useRailwayLines } from '../../../hooks/useRailwayLines'
-import { mockCommunities } from '../../../mocks/communities'
+import { User } from '../../../types/user'
+import { useRailwayLines } from '../../../composables/useRailwayLines'
+import { mockCommunities } from '../../../data/communities'
+
+const BODY_TYPES = ['スリム', '普通', 'がっちり', 'ぽっちゃり', '筋肉質']
+
 
 const TOKYO_MEETING_AREAS = [
   '渋谷・原宿', '新宿・代々木', '池袋', '上野・浅草',
@@ -24,17 +28,39 @@ const AVATAR_OPTIONS = [
 ]
 
 interface MyPageProps {
-  likedCount: number
-  skippedCount: number
+  likedUsers: User[]
+  skippedUsers: User[]
+  onRemoveLiked: (id: number) => void
+  onRemoveSkipped: (id: number) => void
+  onProfileClick: (user: User) => void
+  onOpenFitCheck: () => void
 }
 
-export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
+export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkipped, onProfileClick, onOpenFitCheck }: MyPageProps) => {
   const { profile, logout, updateProfile } = useAuth()
   const { joinedIds, leave } = useCommunity()
   const [isEditing, setIsEditing] = useState(false)
+  const [showLikedHistory, setShowLikedHistory] = useState(false)
+  const [showSkippedHistory, setShowSkippedHistory] = useState(false)
   const [editForm, setEditForm] = useState<Profile | null>(null)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { lines, loading: linesLoading, error: linesError } = useRailwayLines()
   const joinedCommunities = mockCommunities.filter(c => joinedIds.includes(c.id))
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        setUploadedImages(prev => [...prev, dataUrl])
+        setEditForm(f => f ? { ...f, image: dataUrl } : f)
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
 
   const handleEditStart = () => {
     if (profile) {
@@ -56,6 +82,8 @@ export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
     setEditForm(null)
   }
 
+  const likedCount = likedUsers.length
+  const skippedCount = skippedUsers.length
   const matchRate = likedCount + skippedCount > 0
     ? Math.round((likedCount / (likedCount + skippedCount)) * 100)
     : 0
@@ -65,14 +93,17 @@ export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
       <h2>マイページ</h2>
 
       <div className="mypage-profile">
-        <div className="mypage-avatar">
-          <img
-            src={isEditing ? editForm?.image : profile?.image}
-            alt="マイプロフィール"
-          />
+        <div className="mypage-card-image">
+          <div className="profile-image-area">
+            <img
+              src={isEditing ? editForm?.image : profile?.image}
+              alt="マイプロフィール"
+              className="profile-image"
+            />
+          </div>
           {isEditing && (
             <div className="avatar-options">
-              {AVATAR_OPTIONS.map((url) => (
+              {[...AVATAR_OPTIONS, ...uploadedImages].map((url) => (
                 <img
                   key={url}
                   src={url}
@@ -81,6 +112,21 @@ export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
                   onClick={() => setEditForm(f => f ? { ...f, image: url } : f)}
                 />
               ))}
+              <button
+                className="fitcheck-upload-circle"
+                onClick={() => fileInputRef.current?.click()}
+                title="写真をアップロード"
+              >
+                ＋
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleImageUpload}
+              />
             </div>
           )}
         </div>
@@ -172,6 +218,37 @@ export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
           </div>
 
           <div className="mypage-field">
+            <label>身長 (cm)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                min="140"
+                max="210"
+                placeholder="例: 170"
+                value={editForm?.height ?? ''}
+                onChange={(e) => setEditForm(f => f ? { ...f, height: e.target.value ? Number(e.target.value) : undefined } : f)}
+              />
+            ) : (
+              <p className="mypage-value">{profile?.height ? `${profile.height}cm` : '未設定'}</p>
+            )}
+          </div>
+
+          <div className="mypage-field">
+            <label>体型</label>
+            {isEditing ? (
+              <select
+                value={editForm?.bodyType ?? ''}
+                onChange={(e) => setEditForm(f => f ? { ...f, bodyType: e.target.value || undefined } : f)}
+              >
+                <option value="">選択してください</option>
+                {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            ) : (
+              <p className="mypage-value">{profile?.bodyType || '未設定'}</p>
+            )}
+          </div>
+
+          <div className="mypage-field">
             <label>メールアドレス</label>
             <p className="mypage-value">{profile?.email}</p>
           </div>
@@ -223,6 +300,63 @@ export const MyPage = ({ likedCount, skippedCount }: MyPageProps) => {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mypage-history">
+        <div
+          className="mypage-history-header"
+          onClick={() => setShowLikedHistory(v => !v)}
+        >
+          <h3>❤️ いいね履歴 ({likedCount})</h3>
+          <span className="mypage-history-toggle">{showLikedHistory ? '▲' : '▼'}</span>
+        </div>
+        {showLikedHistory && (
+          likedUsers.length === 0
+            ? <p className="mypage-empty-note">いいねした相手がいません</p>
+            : <div className="mypage-history-list">
+                {likedUsers.map(user => (
+                  <div key={user.id} className="mypage-history-item">
+                    <img src={user.image} alt={user.name} className="mypage-history-avatar" onClick={() => onProfileClick(user)} />
+                    <div className="mypage-history-info">
+                      <span className="mypage-history-name">{user.name}</span>
+                      <span className="mypage-history-sub">{user.age}歳 · {user.line}</span>
+                    </div>
+                    <button className="remove-button" onClick={() => onRemoveLiked(user.id)}>削除</button>
+                  </div>
+                ))}
+              </div>
+        )}
+      </div>
+
+      <div className="mypage-history">
+        <div
+          className="mypage-history-header"
+          onClick={() => setShowSkippedHistory(v => !v)}
+        >
+          <h3>⏩ スキップ履歴 ({skippedCount})</h3>
+          <span className="mypage-history-toggle">{showSkippedHistory ? '▲' : '▼'}</span>
+        </div>
+        {showSkippedHistory && (
+          skippedUsers.length === 0
+            ? <p className="mypage-empty-note">スキップした相手がいません</p>
+            : <div className="mypage-history-list">
+                {skippedUsers.map(user => (
+                  <div key={user.id} className="mypage-history-item">
+                    <img src={user.image} alt={user.name} className="mypage-history-avatar" onClick={() => onProfileClick(user)} />
+                    <div className="mypage-history-info">
+                      <span className="mypage-history-name">{user.name}</span>
+                      <span className="mypage-history-sub">{user.age}歳 · {user.line}</span>
+                    </div>
+                    <button className="remove-button" onClick={() => onRemoveSkipped(user.id)}>削除</button>
+                  </div>
+                ))}
+              </div>
+        )}
+      </div>
+
+      <div className="mypage-settings">
+        <h3>ツール</h3>
+        <button className="settings-button fitcheck-open" onClick={onOpenFitCheck}>👗 Fit Check</button>
       </div>
 
       <div className="mypage-settings">

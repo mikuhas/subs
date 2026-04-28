@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { mockCommunities, ALL_TAGS } from '../../../mocks/communities'
+import { mockCommunities, ALL_TAGS } from '../../../data/communities'
 import { Community } from '../../../types/community'
 import { useCommunity } from '../../../contexts/CommunityContext'
 import { CommunityDetail } from './CommunityDetail'

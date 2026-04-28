@@ -2,27 +2,27 @@ import { User } from '../../../types/user'
 import { useMessage } from '../../../contexts/MessageContext'
 
 interface MessagesPageProps {
-  likedUsers: User[]
+  matchedUsers: User[]
   onOpenConversation: (user: User) => void
 }
 
-export const MessagesPage = ({ likedUsers, onOpenConversation }: MessagesPageProps) => {
+export const MessagesPage = ({ matchedUsers, onOpenConversation }: MessagesPageProps) => {
   const { conversationUserIds, getMessages, hasConversation } = useMessage()
 
-  const conversationUsers = likedUsers.filter(u => hasConversation(u.id))
+  const conversationUsers = matchedUsers.filter(u => hasConversation(u.id))
 
   return (
     <div className="messages-page">
       <div className="messages-page-header">
         <h2>メッセージ</h2>
-        <p>いいねした相手とメッセージを交わそう</p>
+        <p>マッチングした相手とメッセージを交わそう</p>
       </div>
 
       {conversationUsers.length === 0 ? (
         <div className="messages-empty">
           <div className="messages-empty-icon">💬</div>
           <p>まだメッセージがありません</p>
-          <p className="messages-empty-sub">「いいね」タブから相手にメッセージを送ってみましょう</p>
+          <p className="messages-empty-sub">「マッチング」タブから相手にメッセージを送ってみましょう</p>
         </div>
       ) : (
         <div className="conversation-list">
@@ -52,11 +52,11 @@ export const MessagesPage = ({ likedUsers, onOpenConversation }: MessagesPagePro
         </div>
       )}
 
-      {likedUsers.length > 0 && conversationUsers.length < likedUsers.length && (
+      {matchedUsers.length > 0 && conversationUsers.length < matchedUsers.length && (
         <div className="messages-suggestions">
           <h3>メッセージを始めよう</h3>
           <div className="suggestion-avatars">
-            {likedUsers.filter(u => !hasConversation(u.id)).slice(0, 6).map(user => (
+            {matchedUsers.filter(u => !hasConversation(u.id)).slice(0, 6).map(user => (
               <div
                 key={user.id}
                 className="suggestion-item"

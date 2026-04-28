@@ -1,17 +1,18 @@
 import './App.css'
 import logo from './assets/logo.png'
 import { useState } from 'react'
-import { useMatchingApp } from './hooks/useMatchingApp'
-import { TabNavigation } from './components/TabNavigation'
-import { SearchSection } from './components/SearchSection'
-import { ProfileCard } from './components/ProfileCard'
-import { ProfileDetail } from './components/ProfileDetail'
-import { UserListTab } from './components/pages/layouts/UserListTab'
+import { useMatchingApp } from './composables/useMatchingApp'
+import { TabNavigation } from './components/ui/TabNavigation'
+import { SearchSection } from './components/ui/SearchSection'
+import { ProfileCard } from './components/ui/ProfileCard'
+import { ProfileDetail } from './components/ui/ProfileDetail'
+import { ActivityPage } from './components/layouts/ActivityPage'
 import { MyPage } from './components/pages/mypage/MyPage'
 import { CommunityPage } from './components/pages/community/CommunityPage'
 import { MessagesPage } from './components/pages/messages/MessagesPage'
 import { ConversationView } from './components/pages/messages/ConversationView'
 import { LoginPage } from './components/pages/auth/LoginPage'
+import { FitCheckPage } from './components/pages/fitcheck/FitCheckPage'
 import { useAuth } from './contexts/AuthContext'
 import { useMessage } from './contexts/MessageContext'
 import { User } from './types/user'
@@ -24,6 +25,8 @@ function MainApp() {
     currentUser,
     likedUsers,
     skippedUsers,
+    matchedUsers,
+    receivedLikes,
     activeTab,
     setActiveTab,
     selectedLine,
@@ -34,12 +37,16 @@ function MainApp() {
     findRandomUser,
     handleLike,
     handleSkip,
+    handleLikeBack,
+    dismissReceivedLike,
     removeLiked,
     removeSkipped,
+    removeMatched,
   } = useMatchingApp(profile?.age)
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [conversationUser, setConversationUser] = useState<User | null>(null)
+  const [showFitCheck, setShowFitCheck] = useState(false)
 
   return (
     <div className="app-container">
@@ -49,9 +56,8 @@ function MainApp() {
 
       <TabNavigation
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        likedCount={likedUsers.length}
-        skippedCount={skippedUsers.length}
+        onTabChange={(tab) => { setActiveTab(tab); setShowFitCheck(false) }}
+        receivedLikesCount={receivedLikes.length}
         messageCount={conversationUserIds.length}
       />
 
@@ -76,37 +82,43 @@ function MainApp() {
           </>
         )}
 
-        {activeTab === 'liked' && (
-          <UserListTab
-            users={likedUsers}
-            title={`いいねした相手 (${likedUsers.length})`}
-            showMessageButton
-            onRemove={removeLiked}
+        {activeTab === 'activity' && (
+          <ActivityPage
+            matchedUsers={matchedUsers}
+            receivedLikes={receivedLikes}
+            onRemoveMatched={removeMatched}
             onProfileClick={user => setSelectedUser(user)}
             onMessage={user => setConversationUser(user)}
+            onLikeBack={handleLikeBack}
+            onDismiss={dismissReceivedLike}
           />
         )}
 
         {activeTab === 'messages' && (
           <MessagesPage
-            likedUsers={likedUsers}
+            matchedUsers={matchedUsers}
             onOpenConversation={user => setConversationUser(user)}
-          />
-        )}
-
-        {activeTab === 'skipped' && (
-          <UserListTab
-            users={skippedUsers}
-            title={`スキップした相手 (${skippedUsers.length})`}
-            onRemove={removeSkipped}
-            onProfileClick={user => setSelectedUser(user)}
           />
         )}
 
         {activeTab === 'community' && <CommunityPage />}
 
         {activeTab === 'mypage' && (
-          <MyPage likedCount={likedUsers.length} skippedCount={skippedUsers.length} />
+          showFitCheck
+            ? (
+              <div>
+                <button className="fitcheck-back-btn" onClick={() => setShowFitCheck(false)}>← マイページに戻る</button>
+                <FitCheckPage />
+              </div>
+            )
+            : <MyPage
+                likedUsers={likedUsers}
+                skippedUsers={skippedUsers}
+                onRemoveLiked={removeLiked}
+                onRemoveSkipped={removeSkipped}
+                onProfileClick={user => setSelectedUser(user)}
+                onOpenFitCheck={() => setShowFitCheck(true)}
+              />
         )}
       </main>
 

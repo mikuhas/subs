@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import { Profile } from '../types/profile'
+import my_profile from '../assets/profile/my_profile.png'
 
 interface AuthContextType {
   isLoggedIn: boolean
@@ -22,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       age: 30,
       bio: 'よろしくお願いします！',
       email,
-      image: 'https://randomuser.me/api/portraits/lego/9.jpg',
+      image: my_profile,
     })
     setIsLoggedIn(true)
     return true

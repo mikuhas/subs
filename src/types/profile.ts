@@ -6,4 +6,6 @@ export interface Profile {
   image: string
   preferredLine?: string
   preferredMeetingArea?: string
+  height?: number
+  bodyType?: string
 }
