@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Backend (別リポジトリ化を想定 — .env等はbackend/.gitignoreで管理)
+backend/.env
+backend/log/
+backend/tmp/
+backend/vendor/bundle/
+backend/.bundle/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
