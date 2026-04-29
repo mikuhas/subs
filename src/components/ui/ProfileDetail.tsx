@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User } from '../types/user'
+import { User } from '../../types/user'
 import { getDistanceLabel } from '../../utils/distance'
 
 interface ProfileDetailProps {
@@ -15,9 +15,13 @@ const INFO_ITEMS = [
   { icon: '🎬', label: '理想のデート',  value: '映画鑑賞とディナー' },
 ]
 
+const BIO_LIMIT = 120
+
 export const ProfileDetail = ({ user, onBack, onOpenBoard }: ProfileDetailProps) => {
   const allImages = [user.image, ...(user.subImages ?? [])]
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [bioExpanded, setBioExpanded] = useState(false)
+  const bioNeedsToggle = user.bio.length > BIO_LIMIT
 
   return (
     <div className="profile-detail-modal" onClick={onBack}>
@@ -80,7 +84,12 @@ export const ProfileDetail = ({ user, onBack, onOpenBoard }: ProfileDetailProps)
         {/* 自己紹介 */}
         <div className="pd-section">
           <h3 className="pd-section-title">自己紹介</h3>
-          <p className="pd-bio">{user.bio}</p>
+          <p className={`pd-bio${bioNeedsToggle && !bioExpanded ? ' collapsed' : ''}`}>{user.bio}</p>
+          {bioNeedsToggle && (
+            <button className="pd-bio-toggle" onClick={() => setBioExpanded(v => !v)}>
+              {bioExpanded ? '閉じる ▲' : 'もっと見る ▼'}
+            </button>
+          )}
         </div>
 
         {/* プロフィール情報グリッド */}

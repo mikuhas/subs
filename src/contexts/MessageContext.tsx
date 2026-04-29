@@ -1,11 +1,18 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import { Message } from '../types/message'
 
+export interface Intention {
+  icon: string
+  label: string
+}
+
 interface MessageContextType {
   sendMessage: (userId: number, text: string) => void
   getMessages: (userId: number) => Message[]
   hasConversation: (userId: number) => boolean
   conversationUserIds: number[]
+  setIntention: (userId: number, intention: Intention | null) => void
+  getIntention: (userId: number) => Intention | null
 }
 
 const MessageContext = createContext<MessageContextType | null>(null)
@@ -53,6 +60,7 @@ const AUTO_REPLIES = [
 
 export const MessageProvider = ({ children }: { children: ReactNode }) => {
   const [conversations, setConversations] = useState<Record<number, Message[]>>({})
+  const [intentions, setIntentions] = useState<Record<number, Intention | null>>({})
 
   const sendMessage = (userId: number, text: string) => {
     const msg: Message = { id: Date.now(), text, fromMe: true, timestamp: Date.now() }
@@ -77,9 +85,12 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
   const getMessages = (userId: number) => conversations[userId] ?? []
   const hasConversation = (userId: number) => (conversations[userId]?.length ?? 0) > 0
   const conversationUserIds = Object.keys(conversations).map(Number)
+  const setIntention = (userId: number, intention: Intention | null) =>
+    setIntentions(prev => ({ ...prev, [userId]: intention }))
+  const getIntention = (userId: number) => intentions[userId] ?? null
 
   return (
-    <MessageContext.Provider value={{ sendMessage, getMessages, hasConversation, conversationUserIds }}>
+    <MessageContext.Provider value={{ sendMessage, getMessages, hasConversation, conversationUserIds, setIntention, getIntention }}>
       {children}
     </MessageContext.Provider>
   )

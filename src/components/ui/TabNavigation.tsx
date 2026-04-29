@@ -7,12 +7,12 @@ interface TabNavigationProps {
   messageCount: number
 }
 
-const TABS: { id: Tab; label: string; icon: string; getCount?: (received: number, msg: number) => number }[] = [
-  { id: 'search',    label: '探す',         icon: '🔍' },
-  { id: 'activity',  label: 'マッチング',   icon: '💞',  getCount: (received) => received },
-  { id: 'messages',  label: 'メッセージ',   icon: '💬',  getCount: (_, msg) => msg },
-  { id: 'community', label: 'コミュニティ', icon: '👥' },
-  { id: 'mypage',    label: 'マイページ',   icon: '👤' },
+const TABS: { id: Tab; label: string; iconClass: string; getCount?: (received: number, msg: number) => number }[] = [
+  { id: 'search',    label: '探す',         iconClass: 'ri-search-line' },
+  { id: 'activity',  label: 'マッチング',   iconClass: 'ri-heart-line',  getCount: (received) => received },
+  { id: 'messages',  label: 'メッセージ',   iconClass: 'ri-message-3-line',  getCount: (_, msg) => msg },
+  { id: 'community', label: 'コミュニティ', iconClass: 'ri-group-line' },
+  { id: 'mypage',    label: 'マイページ',   iconClass: 'ri-user-line' },
 ]
 
 export const TabNavigation = ({
@@ -33,7 +33,7 @@ export const TabNavigation = ({
             aria-label={tab.label}
           >
             <span className="tab-icon-wrap">
-              {tab.icon}
+              <i className={tab.iconClass}></i>
               {count > 0 && <span className="tab-count">{count}</span>}
             </span>
             <span className="tab-label">{tab.label}</span>

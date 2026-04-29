@@ -48,13 +48,12 @@ export const CommunityPage = () => {
               onClick={() => setSelectedCommunity(community)}
             >
               {joined && <span className="community-joined-badge">参加中</span>}
-              <div className="community-card-emoji">{community.emoji}</div>
               <div className="community-card-body">
                 <h3 className="community-card-name">{community.name}</h3>
                 <p className="community-card-desc">{community.description}</p>
                 <div className="community-card-footer">
                   <span className="community-card-tag">{community.tag}</span>
-                  <span className="community-card-members">👥 {community.memberCount.toLocaleString()}</span>
+                  <span className="community-card-members">{community.memberCount.toLocaleString()}人</span>
                 </div>
               </div>
               <button

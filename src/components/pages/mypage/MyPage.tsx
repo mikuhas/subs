@@ -8,6 +8,15 @@ import { mockCommunities } from '../../../data/communities'
 
 const BODY_TYPES = ['スリム', '普通', 'がっちり', 'ぽっちゃり', '筋肉質']
 
+const MAJOR_STATIONS = [
+  '渋谷', '新宿', '池袋', '原宿', '恵比寿', '代官山', '中目黒', '表参道',
+  '吉祥寺', '秋葉原', '上野', '浅草', '銀座', '六本木', '麻布十番', '品川',
+  '五反田', '目黒', '大崎', '新橋', '有楽町', '赤坂', '大手町', '東京',
+  '日本橋', '押上', '錦糸町', '北千住', '川口', '大宮', '浦和', '川越',
+  '所沢', '船橋', '千葉', '横浜', '川崎', '立川', '八王子', '町田',
+  '二子玉川', '下北沢', '高円寺', '中野', '三軒茶屋', '自由が丘', '武蔵小杉',
+]
+
 const TOKYO_MEETING_AREAS = [
   '渋谷・原宿', '新宿・代々木', '池袋', '上野・浅草',
   '秋葉原・神田', '銀座・有楽町', '品川・五反田',
@@ -45,6 +54,8 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const [showSkippedHistory, setShowSkippedHistory] = useState(false)
   const [editForm, setEditForm] = useState<Profile | null>(null)
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [editingField, setEditingField] = useState<keyof Profile | null>(null)
+  const [fieldDraft, setFieldDraft] = useState<Profile[keyof Profile] | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { lines, loading: linesLoading, error: linesError } = useRailwayLines()
   const joinedCommunities = mockCommunities.filter(c => joinedIds.includes(c.id))
@@ -76,6 +87,124 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const set = <K extends keyof Profile>(key: K, val: Profile[K]) =>
     setEditForm(f => f ? { ...f, [key]: val } : f)
 
+  const openField = <K extends keyof Profile>(key: K, val: Profile[K]) => {
+    setEditingField(key)
+    setFieldDraft(val)
+  }
+  const commitField = () => {
+    if (editingField !== null) set(editingField, fieldDraft as Profile[typeof editingField])
+    setEditingField(null)
+  }
+  const discardField = () => setEditingField(null)
+
+  const FIELD_LABELS: Partial<Record<keyof Profile, string>> = {
+    name: '名前', age: '年齢', bio: '自己紹介',
+    preferredLine: '好きな沿線', preferredMeetingArea: '出会いたいエリア',
+    height: '身長', bodyType: '体型',
+    frequentStation: 'よく遊ぶ駅', firstDateStation: '最初のデート希望場所',
+  }
+
+  const renderFieldInput = () => {
+    switch (editingField) {
+      case 'name':
+        return (
+          <input
+            className="mpe-name-input field-modal-input"
+            type="text"
+            value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value)}
+            autoFocus
+          />
+        )
+      case 'age':
+        return (
+          <div className="mpe-inline">
+            <input
+              className="mpe-field-select mpe-height-input"
+              type="number" min="18" max="99"
+              value={fieldDraft as number ?? ''}
+              onChange={e => setFieldDraft(Number(e.target.value))}
+              autoFocus
+            />
+            <span className="mpe-unit">歳</span>
+          </div>
+        )
+      case 'bio':
+        return (
+          <>
+            <div className="field-modal-bio-counter">
+              <span className={`mpe-bio-count ${((fieldDraft as string) ?? '').length >= 450 ? 'near-limit' : ''}`}>
+                {((fieldDraft as string) ?? '').length} / 500
+              </span>
+            </div>
+            <textarea
+              className="mpe-textarea mpe-bio-textarea"
+              placeholder="趣味や好きなことを書いてみよう..."
+              value={fieldDraft as string ?? ''}
+              maxLength={500}
+              onChange={e => setFieldDraft(e.target.value)}
+              autoFocus
+            />
+          </>
+        )
+      case 'preferredLine':
+        return (
+          <select className="mpe-field-select" value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value)} disabled={linesLoading}>
+            <option value="">{linesLoading ? '読み込み中...' : '選択してください'}</option>
+            {lines.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        )
+      case 'preferredMeetingArea':
+        return (
+          <select className="mpe-field-select" value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value)}>
+            <option value="">選択してください</option>
+            {TOKYO_MEETING_AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        )
+      case 'height':
+        return (
+          <div className="mpe-inline">
+            <input
+              className="mpe-field-select mpe-height-input"
+              type="number" min="140" max="210" placeholder="例: 170"
+              value={fieldDraft as number ?? ''}
+              onChange={e => setFieldDraft(e.target.value ? Number(e.target.value) : undefined)}
+              autoFocus
+            />
+            <span className="mpe-unit">cm</span>
+          </div>
+        )
+      case 'bodyType':
+        return (
+          <select className="mpe-field-select" value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value || undefined)}>
+            <option value="">選択してください</option>
+            {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        )
+      case 'frequentStation':
+        return (
+          <select className="mpe-field-select" value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value || undefined)}>
+            <option value="">選択してください</option>
+            {MAJOR_STATIONS.map(s => <option key={s} value={s}>{s}駅</option>)}
+          </select>
+        )
+      case 'firstDateStation':
+        return (
+          <select className="mpe-field-select" value={fieldDraft as string ?? ''}
+            onChange={e => setFieldDraft(e.target.value || undefined)}>
+            <option value="">選択してください</option>
+            {MAJOR_STATIONS.map(s => <option key={s} value={s}>{s}周辺</option>)}
+          </select>
+        )
+      default:
+        return null
+    }
+  }
+
   const likedCount = likedUsers.length
   const skippedCount = skippedUsers.length
   const matchRate = likedCount + skippedCount > 0
@@ -90,153 +219,120 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
         {isEditing ? (
           /* 編集モード */
           <>
-            {/* ヒーロー写真 */}
-            <div className="pd-hero">
-              <img src={editForm?.image} alt="プロフィール" className="pd-hero-img" />
-            </div>
-
-            {/* フォト選択 */}
-            <div className="mpe-photo-picker">
-              {[...AVATAR_OPTIONS, ...uploadedImages].map(url => (
-                <button
-                  key={url}
-                  className={`pd-thumb ${editForm?.image === url ? 'active' : ''}`}
-                  onClick={() => set('image', url)}
-                >
-                  <img src={url} alt="" />
+            {/* アバター + フォト選択 */}
+            <div className="mpe-avatar-section">
+              <div className="mpe-avatar-wrapper">
+                <img src={editForm?.image} alt="プロフィール" className="mpe-avatar-img" />
+                <span className="mpe-avatar-camera">📷</span>
+              </div>
+              <div className="mpe-photo-strip">
+                {[...AVATAR_OPTIONS, ...uploadedImages].map(url => (
+                  <button key={url} className={`pd-thumb ${editForm?.image === url ? 'active' : ''}`}
+                    onClick={() => set('image', url)}>
+                    <img src={url} alt="" />
+                  </button>
+                ))}
+                <button className="pd-thumb mpe-upload-btn" onClick={() => fileInputRef.current?.click()}>
+                  <span>＋</span>
                 </button>
-              ))}
-              <button className="pd-thumb mpe-upload-btn" onClick={() => fileInputRef.current?.click()} title="写真をアップロード">
-                <span>＋</span>
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImageUpload} />
-            </div>
-
-            {/* 名前・年齢 */}
-            <div className="mpe-name-row">
-              <input
-                className="mpe-name-input"
-                type="text"
-                placeholder="名前"
-                value={editForm?.name ?? ''}
-                onChange={e => set('name', e.target.value)}
-              />
-              <input
-                className="mpe-age-input"
-                type="number"
-                min="18"
-                max="99"
-                value={editForm?.age ?? ''}
-                onChange={e => set('age', Number(e.target.value))}
-              />
-              <span className="mpe-age-unit">歳</span>
-            </div>
-
-            {/* 自己紹介 */}
-            <div className="pd-section">
-              <h3 className="pd-section-title">自己紹介</h3>
-              <textarea
-                className="mpe-textarea"
-                placeholder="自己紹介を入力..."
-                value={editForm?.bio ?? ''}
-                onChange={e => set('bio', e.target.value)}
-              />
-            </div>
-
-            {/* プロフィール詳細 */}
-            <div className="pd-section">
-              <h3 className="pd-section-title">プロフィール</h3>
-              <div className="mpe-field-list">
-
-                <div className="mpe-field-item">
-                  <span className="mpe-field-icon">🚃</span>
-                  <div className="mpe-field-body">
-                    <label className="mpe-field-label">
-                      好きな沿線
-                      {linesError && <span className="field-note">（オフライン）</span>}
-                    </label>
-                    <select
-                      className="mpe-field-select"
-                      value={editForm?.preferredLine ?? ''}
-                      onChange={e => set('preferredLine', e.target.value)}
-                      disabled={linesLoading}
-                    >
-                      <option value="">{linesLoading ? '読み込み中...' : '選択してください'}</option>
-                      {lines.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mpe-field-item">
-                  <span className="mpe-field-icon">📍</span>
-                  <div className="mpe-field-body">
-                    <label className="mpe-field-label">出会いたいエリア</label>
-                    <select
-                      className="mpe-field-select"
-                      value={editForm?.preferredMeetingArea ?? ''}
-                      onChange={e => set('preferredMeetingArea', e.target.value)}
-                    >
-                      <option value="">選択してください</option>
-                      {TOKYO_MEETING_AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mpe-field-item">
-                  <span className="mpe-field-icon">📏</span>
-                  <div className="mpe-field-body">
-                    <label className="mpe-field-label">身長</label>
-                    <div className="mpe-inline">
-                      <input
-                        className="mpe-field-select mpe-height-input"
-                        type="number"
-                        min="140"
-                        max="210"
-                        placeholder="例: 170"
-                        value={editForm?.height ?? ''}
-                        onChange={e => set('height', e.target.value ? Number(e.target.value) : undefined)}
-                      />
-                      <span className="mpe-unit">cm</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mpe-field-item">
-                  <span className="mpe-field-icon">👤</span>
-                  <div className="mpe-field-body">
-                    <label className="mpe-field-label">体型</label>
-                    <select
-                      className="mpe-field-select"
-                      value={editForm?.bodyType ?? ''}
-                      onChange={e => set('bodyType', e.target.value || undefined)}
-                    >
-                      <option value="">選択してください</option>
-                      {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-
+                <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImageUpload} />
               </div>
             </div>
 
-            {/* マッチング設定 */}
-            <div className="pd-section">
-              <h3 className="pd-section-title">マッチング設定</h3>
-              <div className="mpe-field-list">
-                <div className="mpe-field-item">
-                  <span className="mpe-field-icon">💞</span>
-                  <div className="mpe-field-body">
-                    <label className="mpe-field-label">ランダムマッチ</label>
-                    <button
-                      type="button"
-                      className={`random-match-toggle ${editForm?.randomMatchEnabled !== false ? 'on' : 'off'}`}
-                      onClick={() => set('randomMatchEnabled', !(editForm?.randomMatchEnabled !== false))}
-                    >
-                      {editForm?.randomMatchEnabled !== false ? '✅ 対象に含める' : '🚫 対象から外す'}
-                    </button>
+            {/* フィールドグリッド */}
+            <div className="mpe-edit-grid">
+
+              {/* 名前 – フル幅 */}
+              <div className="mpe-tile mpe-tile-full" onClick={() => openField('name', editForm?.name)}>
+                <div className="mpe-tile-inner">
+                  <span className="mpe-tile-icon">👤</span>
+                  <div className="mpe-tile-texts">
+                    <span className="mpe-tile-label">名前</span>
+                    <span className="mpe-tile-value">{editForm?.name || '未設定'}</span>
                   </div>
                 </div>
+                <i className="ri-arrow-right-s-line mpe-tile-chevron" />
               </div>
+
+              {/* 年齢 */}
+              <div className="mpe-tile" onClick={() => openField('age', editForm?.age)}>
+                <span className="mpe-tile-icon">🎂</span>
+                <span className="mpe-tile-label">年齢</span>
+                <span className="mpe-tile-value">{editForm?.age ? `${editForm.age}歳` : '—'}</span>
+              </div>
+
+              {/* 身長 */}
+              <div className="mpe-tile" onClick={() => openField('height', editForm?.height)}>
+                <span className="mpe-tile-icon">📏</span>
+                <span className="mpe-tile-label">身長</span>
+                <span className="mpe-tile-value">{editForm?.height ? `${editForm.height}cm` : '—'}</span>
+              </div>
+
+              {/* 体型 */}
+              <div className="mpe-tile" onClick={() => openField('bodyType', editForm?.bodyType)}>
+                <span className="mpe-tile-icon">👕</span>
+                <span className="mpe-tile-label">体型</span>
+                <span className="mpe-tile-value">{editForm?.bodyType || '—'}</span>
+              </div>
+
+              {/* 好きな沿線 */}
+              <div className="mpe-tile" onClick={() => openField('preferredLine', editForm?.preferredLine)}>
+                <span className="mpe-tile-icon">🚃</span>
+                <span className="mpe-tile-label">好きな沿線</span>
+                <span className="mpe-tile-value">{editForm?.preferredLine || '—'}</span>
+              </div>
+
+              {/* 出会いたいエリア */}
+              <div className="mpe-tile" onClick={() => openField('preferredMeetingArea', editForm?.preferredMeetingArea)}>
+                <span className="mpe-tile-icon">📍</span>
+                <span className="mpe-tile-label">出会いたいエリア</span>
+                <span className="mpe-tile-value">{editForm?.preferredMeetingArea || '—'}</span>
+              </div>
+
+              {/* よく遊ぶ駅 */}
+              <div className="mpe-tile" onClick={() => openField('frequentStation', editForm?.frequentStation)}>
+                <span className="mpe-tile-icon">🗺️</span>
+                <span className="mpe-tile-label">よく遊ぶ駅</span>
+                <span className="mpe-tile-value">{editForm?.frequentStation ? `${editForm.frequentStation}駅` : '—'}</span>
+              </div>
+
+              {/* 最初のデート */}
+              <div className="mpe-tile" onClick={() => openField('firstDateStation', editForm?.firstDateStation)}>
+                <span className="mpe-tile-icon">💑</span>
+                <span className="mpe-tile-label">最初のデート</span>
+                <span className="mpe-tile-value">{editForm?.firstDateStation ? `${editForm.firstDateStation}周辺` : '—'}</span>
+              </div>
+
+              {/* 自己紹介 – フル幅 */}
+              <div className="mpe-tile mpe-tile-full mpe-tile-bio" onClick={() => openField('bio', editForm?.bio)}>
+                <div className="mpe-tile-inner">
+                  <span className="mpe-tile-icon">✏️</span>
+                  <div className="mpe-tile-texts">
+                    <span className="mpe-tile-label">自己紹介</span>
+                    <span className="mpe-tile-bio-preview">{editForm?.bio || '未入力'}</span>
+                  </div>
+                </div>
+                <i className="ri-arrow-right-s-line mpe-tile-chevron" />
+              </div>
+
+              {/* ランダムマッチ – フル幅 */}
+              <div className="mpe-tile mpe-tile-full mpe-tile-toggle">
+                <div className="mpe-tile-inner">
+                  <span className="mpe-tile-icon">💞</span>
+                  <div className="mpe-tile-texts">
+                    <span className="mpe-tile-label">ランダムマッチ</span>
+                    <span className="mpe-tile-value">
+                      {editForm?.randomMatchEnabled !== false ? '対象に含める' : '対象から外す'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`mpe-ios-toggle ${editForm?.randomMatchEnabled !== false ? 'on' : ''}`}
+                  onClick={() => set('randomMatchEnabled', !(editForm?.randomMatchEnabled !== false))}
+                />
+              </div>
+
             </div>
 
             {/* 保存・キャンセル */}
@@ -244,6 +340,29 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
               <button className="mpe-save-btn" onClick={handleSave}>保存</button>
               <button className="mpe-cancel-btn" onClick={handleCancel}>キャンセル</button>
             </div>
+
+            {/* フィールド編集モーダル */}
+            {editingField && (
+              <div className="field-modal-overlay">
+                <div className="field-modal" onClick={e => e.stopPropagation()}>
+                  <div className="field-modal-header">
+                    <span className="field-modal-icon">{
+                      ({ name:'👤', age:'🎂', bio:'✏️', preferredLine:'🚃',
+                        preferredMeetingArea:'📍', height:'📏', bodyType:'👕',
+                        frequentStation:'🗺️', firstDateStation:'💑' } as Record<string, string>)[editingField]
+                    }</span>
+                    <h4 className="field-modal-title">{FIELD_LABELS[editingField]}</h4>
+                  </div>
+                  <div className="field-modal-body">
+                    {renderFieldInput()}
+                  </div>
+                  <div className="field-modal-actions">
+                    <button className="field-modal-cancel" onClick={discardField}>キャンセル</button>
+                    <button className="field-modal-save" onClick={commitField}>保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* 閲覧モード */
@@ -268,16 +387,18 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
               <h3 className="pd-section-title">プロフィール</h3>
               <div className="pd-info-grid">
                 {[
-                  { icon: '⚧️', label: '性別',          value: profile?.gender ? GENDER_LABEL[profile.gender] : undefined },
-                  { icon: '🚃', label: '好きな沿線',     value: profile?.preferredLine },
-                  { icon: '📍', label: '出会いたいエリア', value: profile?.preferredMeetingArea },
-                  { icon: '📏', label: '身長',           value: profile?.height ? `${profile.height}cm` : undefined },
-                  { icon: '👤', label: '体型',           value: profile?.bodyType },
-                  { icon: '💞', label: 'ランダムマッチ',  value: profile?.randomMatchEnabled !== false ? '対象に含める' : '対象から外す' },
-                  { icon: '📧', label: 'メール',         value: profile?.email },
+                  { icon: 'ri-person-fill', label: '性別',          value: profile?.gender ? GENDER_LABEL[profile.gender] : undefined },
+                  { icon: 'ri-railway-fill', label: '好きな沿線',     value: profile?.preferredLine },
+                  { icon: 'ri-map-pin-fill', label: '出会いたいエリア', value: profile?.preferredMeetingArea },
+                  { icon: 'ri-ruler-fill', label: '身長',           value: profile?.height ? `${profile.height}cm` : undefined },
+                  { icon: 'ri-user-fill', label: '体型',           value: profile?.bodyType },
+                  { icon: 'ri-dice-fill', label: 'ランダムマッチ',  value: profile?.randomMatchEnabled !== false ? '対象に含める' : '対象から外す' },
+                  { icon: 'ri-map-2-fill', label: 'よく遊ぶ駅',     value: profile?.frequentStation ? `${profile.frequentStation}駅` : undefined },
+                  { icon: 'ri-heart-2-fill', label: '最初のデート希望場所', value: profile?.firstDateStation ? `${profile.firstDateStation}周辺` : undefined },
+                  { icon: 'ri-mail-fill', label: 'メール',         value: profile?.email },
                 ].filter(({ value }) => !!value).map(({ icon, label, value }) => (
                   <div key={label} className="pd-info-item">
-                    <span className="pd-info-icon">{icon}</span>
+                    <span className="pd-info-icon"><i className={icon}></i></span>
                     <div className="pd-info-text">
                       <span className="pd-info-label">{label}</span>
                       <span className="pd-info-value">{value}</span>
@@ -322,7 +443,6 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
           <div className="mypage-community-list">
             {joinedCommunities.map(c => (
               <div key={c.id} className="mypage-community-item">
-                <span className="mypage-community-emoji">{c.emoji}</span>
                 <span className="mypage-community-name">{c.name}</span>
                 <button className="mypage-community-leave" onClick={() => leave(c.id)}>脱退</button>
               </div>

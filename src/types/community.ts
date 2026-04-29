@@ -3,6 +3,6 @@ export interface Community {
   name: string
   tag: string
   description: string
-  emoji: string
+  iconClass: string
   memberCount: number
 }

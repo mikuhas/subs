@@ -23,6 +23,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       age: 30,
       bio: 'よろしくお願いします！',
       email,
+      preferredLine: '山手線',
+      preferredMeetingArea: '渋谷',
+      height: 175,
+      bodyType: '普通',
+      randomMatchEnabled: true,
       image: my_profile,
       gender: 'mens',
     })

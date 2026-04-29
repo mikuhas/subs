@@ -286,7 +286,7 @@ export const FitCheckPage = () => {
                   {illustrationLoadings[i] ? (
                     <div className="fitcheck-illust-loading">
                       <div className="fitcheck-illust-emojis">
-                        <span>👗</span><span>✨</span><span>👔</span><span>✨</span><span>👠</span>
+                        <span><i className="ri-t-shirt-line"></i></span><span><i className="ri-sparkling-line"></i></span><span><i className="ri-shirt-line"></i></span><span><i className="ri-sparkling-line"></i></span><span><i className="ri-footprint-line"></i></span>
                       </div>
                       <p className="fitcheck-illust-loading-text">コーデをイラスト化中...</p>
                     </div>
@@ -296,7 +296,7 @@ export const FitCheckPage = () => {
                       onClick={() => handleGenerateIllustration(i)}
                       disabled={isAnyIllustrationLoading}
                     >
-                      🎨 イラストを生成
+                      <i className="ri-palette-line"></i> イラストを生成
                     </button>
                   )}
                   {illustrationErrors[i] && (

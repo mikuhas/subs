@@ -296,8 +296,8 @@ const MAX_SIZE = 512
 const JPEG_QUALITY = 0.5
 
 function compressImage(source: HTMLImageElement | ImageBitmap): string {
-  const w = 'width' in source ? source.width : source.width
-  const h = 'height' in source ? source.height : source.height
+  const w = source.width
+  const h = source.height
   const scale = Math.min(1, MAX_SIZE / Math.max(w, h))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(w * scale)

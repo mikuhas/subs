@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User } from '../../types/user'
 import { getDistanceLabel } from '../../utils/distance'
+import { mockCommunities } from '../../data/communities'
 
 const RANDOM_MATCH_LIMIT = 3
 const STORAGE_KEY = 'randomMatch'
@@ -135,11 +136,19 @@ export const ActivityPage = ({
                   <div className="user-info">
                     <h4>{user.name}</h4>
                     <p className="age-small">{user.age}歳 · {getDistanceLabel(user.distanceKm)}</p>
-                    <p className="bio-small">{user.bio}</p>
+                    <p className="age-small"><i className="ri-subway-line"></i> {user.line}</p>
+                    {user.communityIds.length > 0 && (
+                      <div className="user-info-communities">
+                        {user.communityIds.map(cid => {
+                          const c = mockCommunities.find(c => c.id === cid)
+                          return c ? <span key={cid} className="user-info-community-tag">{c.name}</span> : null
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="user-list-actions">
-                    <button className="likeback-button" onClick={() => onLikeBack(user)}>❤️ いいね</button>
-                    <button className="remove-button" onClick={() => onDismiss(user.id)}>スルー</button>
+                    <button className="likeback-button" onClick={() => onLikeBack(user)}><i className="ri-heart-fill"></i> いいね</button>
+                    <button className="remove-button" onClick={() => onDismiss(user.id)}>スキップ</button>
                   </div>
                 </div>
               ))}
@@ -169,7 +178,15 @@ export const ActivityPage = ({
                   <div className="user-info">
                     <h4>{user.name}</h4>
                     <p className="age-small">{user.age}歳 · {getDistanceLabel(user.distanceKm)}</p>
-                    <p className="bio-small">{user.bio}</p>
+                    <p className="age-small"><i className="ri-subway-line"></i> {user.line}</p>
+                    {user.communityIds.length > 0 && (
+                      <div className="user-info-communities">
+                        {user.communityIds.map(cid => {
+                          const c = mockCommunities.find(c => c.id === cid)
+                          return c ? <span key={cid} className="user-info-community-tag">{c.name}</span> : null
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="user-list-actions">
                     <button className="message-button" onClick={() => onMessage(user)}>💬</button>

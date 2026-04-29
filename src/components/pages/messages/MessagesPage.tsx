@@ -7,7 +7,7 @@ interface MessagesPageProps {
 }
 
 export const MessagesPage = ({ matchedUsers, onOpenConversation }: MessagesPageProps) => {
-  const { conversationUserIds, getMessages, hasConversation } = useMessage()
+  const { getMessages, hasConversation } = useMessage()
 
   const conversationUsers = matchedUsers.filter(u => hasConversation(u.id))
 
@@ -20,7 +20,7 @@ export const MessagesPage = ({ matchedUsers, onOpenConversation }: MessagesPageP
 
       {conversationUsers.length === 0 ? (
         <div className="messages-empty">
-          <div className="messages-empty-icon">💬</div>
+          <div className="messages-empty-icon"><i className="ri-message-3-line"></i></div>
           <p>まだメッセージがありません</p>
           <p className="messages-empty-sub">「マッチング」タブから相手にメッセージを送ってみましょう</p>
         </div>

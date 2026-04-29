@@ -10,4 +10,6 @@ export interface Profile {
   height?: number
   bodyType?: string
   randomMatchEnabled?: boolean
+  frequentStation?: string
+  firstDateStation?: string
 }

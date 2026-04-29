@@ -7,10 +7,19 @@ interface ConversationViewProps {
   onClose: () => void
 }
 
+const MOOD_OPTIONS = [
+  { icon: '📞', label: '電話をしたい' },
+  { icon: '🍽️', label: 'デートに行きたい' },
+  { icon: '💬', label: '連絡先を交換したい' },
+  { icon: '📷', label: 'もっと写真が見たい' },
+]
+
 export const ConversationView = ({ user, onClose }: ConversationViewProps) => {
-  const { getMessages, sendMessage } = useMessage()
+  const { getMessages, sendMessage, setIntention, getIntention } = useMessage()
   const [text, setText] = useState('')
+  const [showMood, setShowMood] = useState(false)
   const messages = getMessages(user.id)
+  const intention = getIntention(user.id)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,6 +40,11 @@ export const ConversationView = ({ user, onClose }: ConversationViewProps) => {
     }
   }
 
+  const handleMood = (icon: string, label: string) => {
+    setIntention(user.id, { icon, label })
+    setShowMood(false)
+  }
+
   const formatTime = (ts: number) =>
     new Date(ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
 
@@ -45,6 +59,18 @@ export const ConversationView = ({ user, onClose }: ConversationViewProps) => {
             <div className="conversation-age">{user.age}歳</div>
           </div>
         </div>
+
+        {/* 意欲カード */}
+        {intention && (
+          <div className="intention-card">
+            <span className="intention-card-icon">{intention.icon}</span>
+            <div className="intention-card-text">
+              <span className="intention-card-label">あなたの気持ち</span>
+              <span className="intention-card-value">{intention.label}</span>
+            </div>
+            <button className="intention-card-clear" onClick={() => setIntention(user.id, null)}>×</button>
+          </div>
+        )}
 
         <div className="conversation-messages">
           {messages.length === 0 && (
@@ -64,7 +90,29 @@ export const ConversationView = ({ user, onClose }: ConversationViewProps) => {
           <div ref={bottomRef} />
         </div>
 
+        {/* 気持ちパネル */}
+        {showMood && (
+          <div className="mood-panel">
+            <p className="mood-panel-title">今の気持ちを伝えよう</p>
+            <div className="mood-panel-grid">
+              {MOOD_OPTIONS.map(({ icon, label }) => (
+                <button key={label} className={`mood-chip ${intention?.label === label ? 'active' : ''}`} onClick={() => handleMood(icon, label)}>
+                  <span className="mood-chip-icon">{icon}</span>
+                  <span className="mood-chip-label">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="conversation-input-bar">
+          <button
+            className={`mood-toggle-btn ${showMood ? 'active' : ''}`}
+            onClick={() => setShowMood(v => !v)}
+            title="気持ちを選ぶ"
+          >
+            💭
+          </button>
           <input
             type="text"
             value={text}

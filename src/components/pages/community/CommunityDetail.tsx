@@ -27,12 +27,11 @@ export const CommunityDetail = ({ community, onClose }: CommunityDetailProps) =>
         <button className="close-button" onClick={onClose}>×</button>
 
         <div className="community-detail-header">
-          <div className="community-detail-emoji">{community.emoji}</div>
           <div>
             <span className="community-tag-badge">{community.tag}</span>
             <h2>{community.name}</h2>
             <p className="community-detail-desc">{community.description}</p>
-            <p className="community-member-count">👥 {community.memberCount.toLocaleString()}人が参加中</p>
+            <p className="community-member-count">{community.memberCount.toLocaleString()}人が参加中</p>
           </div>
         </div>
 
