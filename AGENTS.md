@@ -69,3 +69,9 @@ src/
 - 1階層上: `../componentName`
 - 2階層上: `../../componentName`
 - 3階層上: `../../../componentName`
+
+## カラーコード
+メインカラー：#11C5C8
+サブカラー：#FF6E5E
+文字カラー：#233A5A
+背景：#F8FAFC

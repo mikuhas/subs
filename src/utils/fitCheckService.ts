@@ -15,12 +15,14 @@ export type ProfileInfo = {
   gender?: 'mens' | 'womens' | 'kids'
 }
 
-function estimateSize(height?: number, bodyType?: string): string {
+const AVERAGE_HEIGHT: Record<string, number> = { mens: 171, womens: 158, kids: 140 }
+
+function estimateSize(height?: number, bodyType?: string, gender?: ProfileInfo['gender']): string {
   const bulky = bodyType === 'がっちり' || bodyType === '筋肉質'
-  if (!height) return bulky ? 'L' : 'M'
-  if (height <= 155) return bulky ? 'M' : 'S'
-  if (height <= 165) return bulky ? 'L' : 'M'
-  if (height <= 175) return bulky ? 'XL' : 'L'
+  const h = height ?? AVERAGE_HEIGHT[gender ?? 'mens']
+  if (h <= 155) return bulky ? 'M' : 'S'
+  if (h <= 165) return bulky ? 'L' : 'M'
+  if (h <= 175) return bulky ? 'XL' : 'L'
   return bulky ? 'XXL' : 'XL'
 }
 
@@ -151,7 +153,7 @@ export async function fetchFitCheck(
   stylePrompt: string,
   profileInfo: ProfileInfo = {},
 ): Promise<FitCheckResult> {
-  const size = estimateSize(profileInfo.height, profileInfo.bodyType)
+  const size = estimateSize(profileInfo.height, profileInfo.bodyType, profileInfo.gender)
   const MODEL = 'gemini-3.1-flash-lite-preview';
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
@@ -242,28 +244,52 @@ export async function fetchFitCheck(
   }
 }
 
-export async function fetchOutfitIllustration(outfitDescription: string): Promise<string | null> {
-    const MODEL = 'gemini-2.0-flash';
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `以下のファッションコーデのイラストを生成してください。シンプルな白背景のファッションスケッチスタイルで、全身コーデが分かるように描いてください。\n\n${outfitDescription}`,
-          }],
-        }],
-        generationConfig: { responseModalities: ['IMAGE'] },
-      }),
-    },
-  )
-  if (!res.ok) return null
-  const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>
+function stripLinks(value: string): string {
+  return value.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim()
+}
+
+export function summarizeOutfitForPrompt(text: string, patternIndex = 0): string {
+  const n = patternIndex + 1
+  // 対象パターンのセクションだけ切り出す
+  const re = new RegExp(`##[^\\n]*パターン${n}[\\s\\S]*?(?=\\n##[^\\n]*パターン${n + 1}|$)`)
+  const section = text.match(re)?.[0] ?? text
+
+  // ### セクションごとにアイテムとカラーをペアで取得し、ズレを防ぐ
+  const pairs: string[] = []
+  for (const [, body] of section.matchAll(/###\s+[^\n]+\n([\s\S]*?)(?=\n###|\n##|$)/g)) {
+    const item = body.match(/\*\*アイテム\*\*[：:]\s*([^\n]+)/)?.[1]
+    const color = body.match(/\*\*カラー\*\*[：:]\s*([^\n]+)/)?.[1]
+    if (item) pairs.push(color ? `${stripLinks(color)}の${stripLinks(item)}` : stripLinks(item))
   }
-  return data.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data)?.inlineData?.data ?? null
+  return pairs.join(', ').slice(0, 120)
+}
+
+const GENDER_PROMPT: Record<string, string> = {
+  mens: 'single male model',
+  womens: 'single female model',
+  kids: 'single child model',
+}
+
+function extractPatternTitle(text: string, patternIndex: number): string {
+  const n = patternIndex + 1
+  const match = text.match(new RegExp(`##[^\\n]*パターン${n}[^:：\\n]*[:：]\\s*([^\\n]+)`))
+  if (!match) return 'date outfit'
+  // 絵文字・記号を除去して純粋なテキストだけ残す
+  return match[1].replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim() || 'date outfit'
+}
+
+export function buildOutfitIllustrationUrl(
+  outfitDescription: string,
+  gender?: 'mens' | 'womens' | 'kids',
+  patternIndex = 0,
+  seed?: number,
+): string {
+  const summary = summarizeOutfitForPrompt(outfitDescription, patternIndex)
+  const title = extractPatternTitle(outfitDescription, patternIndex)
+  const genderText = (gender && GENDER_PROMPT[gender]) ?? 'single person'
+  const prompt = `Fashion illustration, clean white background, front view, one person only, ${genderText} with Japanese appearance, full body head to toe, outfit theme: ${title}, stylish fashion sketch. Outfit: ${summary}`
+  const s = seed ?? Math.floor(Math.random() * 99999)
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=flux&nologo=true&seed=${s}`
 }
 
 const MAX_SIZE = 512

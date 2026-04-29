@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       bio: 'よろしくお願いします！',
       email,
       image: my_profile,
+      gender: 'mens',
     })
     setIsLoggedIn(true)
     return true

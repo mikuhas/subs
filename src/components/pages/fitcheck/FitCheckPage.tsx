@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
-import { fetchFitCheck, fetchOutfitIllustration, fileToBase64, urlToBase64 } from '../../../utils/fitCheckService'
+import { fetchFitCheck, buildOutfitIllustrationUrl, fileToBase64, urlToBase64 } from '../../../utils/fitCheckService'
 import { MarkdownView } from '../../ui/MarkdownView'
 
 const STYLE_OPTIONS = [
@@ -15,11 +15,7 @@ const COLOR_OPTIONS = [
 
 const BUDGET_OPTIONS = ['5,000〜10,000円', '10,000〜20,000円', '20,000円〜']
 
-const GENDER_OPTIONS: { label: string; value: 'mens' | 'womens' | 'kids' }[] = [
-  { label: 'メンズ', value: 'mens' },
-  { label: 'レディース', value: 'womens' },
-  { label: 'キッズ', value: 'kids' },
-]
+const PATTERN_COUNT = 3
 
 type ImageEntry = { base64: string; preview: string }
 
@@ -27,19 +23,30 @@ export const FitCheckPage = () => {
   const { profile } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const illustrationTimerRefs = useRef<(ReturnType<typeof setTimeout> | null)[]>(
+    Array(PATTERN_COUNT).fill(null)
+  )
+  const illustrationRetryCounts = useRef<number[]>(Array(PATTERN_COUNT).fill(0))
+
   const [images, setImages] = useState<ImageEntry[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | 'profile' | null>(null)
   const [style, setStyle] = useState(STYLE_OPTIONS[0])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [budget, setBudget] = useState('')
-  const [gender, setGender] = useState<'mens' | 'womens' | 'kids' | ''>('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ imageBase64: string | null; text: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [profileBase64, setProfileBase64] = useState<string | null>(null)
-  const [illustrationBase64, setIllustrationBase64] = useState<string | null>(null)
-  const [illustrationLoading, setIllustrationLoading] = useState(false)
-  const [illustrationError, setIllustrationError] = useState<string | null>(null)
+
+  const [illustrationUrls, setIllustrationUrls] = useState<(string | null)[]>(
+    Array(PATTERN_COUNT).fill(null)
+  )
+  const [illustrationLoadings, setIllustrationLoadings] = useState<boolean[]>(
+    Array(PATTERN_COUNT).fill(false)
+  )
+  const [illustrationErrors, setIllustrationErrors] = useState<(string | null)[]>(
+    Array(PATTERN_COUNT).fill(null)
+  )
 
   const activePreview =
     selectedIndex === 'profile' ? profile?.image ?? null
@@ -97,19 +104,51 @@ export const FitCheckPage = () => {
     setResult(null)
   }
 
-  const handleGenerateIllustration = async () => {
-    if (!result?.text) return
-    setIllustrationLoading(true)
-    setIllustrationError(null)
-    setIllustrationBase64(null)
-    try {
-      const b64 = await fetchOutfitIllustration(result.text)
-      if (!b64) throw new Error('イラスト生成に失敗しました（無料枠では利用できない場合があります）')
-      setIllustrationBase64(b64)
-    } catch (e) {
-      setIllustrationError(e instanceof Error ? e.message : 'イラスト生成エラー')
-    } finally {
-      setIllustrationLoading(false)
+  const clearIllustrationTimer = (i: number) => {
+    if (illustrationTimerRefs.current[i]) {
+      clearTimeout(illustrationTimerRefs.current[i]!)
+      illustrationTimerRefs.current[i] = null
+    }
+  }
+
+  useEffect(() => () => {
+    for (let i = 0; i < PATTERN_COUNT; i++) clearIllustrationTimer(i)
+  }, [])
+
+  const resetIllustrationState = (i: number, errorMsg?: string) => {
+    clearIllustrationTimer(i)
+    setIllustrationLoadings(prev => { const n = [...prev]; n[i] = false; return n })
+    setIllustrationUrls(prev => { const n = [...prev]; n[i] = null; return n })
+    if (errorMsg) setIllustrationErrors(prev => { const n = [...prev]; n[i] = errorMsg; return n })
+  }
+
+  const isAnyIllustrationLoading = illustrationLoadings.some(Boolean)
+
+  const handleGenerateIllustration = (i: number) => {
+    if (!result?.text || isAnyIllustrationLoading) return
+    clearIllustrationTimer(i)
+    illustrationRetryCounts.current[i] = 0
+    const url = buildOutfitIllustrationUrl(result.text, profile?.gender, i)
+    setIllustrationLoadings(prev => { const n = [...prev]; n[i] = true; return n })
+    setIllustrationErrors(prev => { const n = [...prev]; n[i] = null; return n })
+    setIllustrationUrls(prev => { const n = [...prev]; n[i] = url; return n })
+    illustrationTimerRefs.current[i] = setTimeout(
+      () => resetIllustrationState(i, 'タイムアウトしました。もう一度お試しください。'),
+      30000,
+    )
+  }
+
+  const handleIllustrationError = (i: number) => {
+    if (illustrationRetryCounts.current[i] < 1) {
+      illustrationRetryCounts.current[i]++
+      // 2秒待ってから別シードでリトライ（レート制限を避ける）
+      setTimeout(() => {
+        const url = buildOutfitIllustrationUrl(result?.text ?? '', profile?.gender, i)
+        setIllustrationUrls(prev => { const n = [...prev]; n[i] = url; return n })
+      }, 2000)
+    } else {
+      illustrationRetryCounts.current[i] = 0
+      resetIllustrationState(i, 'イラスト生成に失敗しました。もう一度お試しください。')
     }
   }
 
@@ -118,15 +157,16 @@ export const FitCheckPage = () => {
     setLoading(true)
     setError(null)
     setResult(null)
-    setIllustrationBase64(null)
-    setIllustrationError(null)
+    setIllustrationUrls(Array(PATTERN_COUNT).fill(null))
+    setIllustrationLoadings(Array(PATTERN_COUNT).fill(false))
+    setIllustrationErrors(Array(PATTERN_COUNT).fill(null))
     try {
       const res = await fetchFitCheck(activeBase64, style, {
         height: profile?.height,
         bodyType: profile?.bodyType,
         preferredColors: selectedColors.length ? selectedColors : undefined,
         budget: budget || undefined,
-        gender: gender || undefined,
+        gender: profile?.gender || undefined,
       })
       setResult(res)
     } catch (e) {
@@ -191,21 +231,6 @@ export const FitCheckPage = () => {
       </div>
 
       <div className="fitcheck-section">
-        <label className="fitcheck-label">性別</label>
-        <div className="fitcheck-style-grid">
-          {GENDER_OPTIONS.map(g => (
-            <button
-              key={g.value}
-              className={`fitcheck-style-btn ${gender === g.value ? 'active' : ''}`}
-              onClick={() => setGender(prev => prev === g.value ? '' : g.value)}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="fitcheck-section">
         <label className="fitcheck-label">スタイル</label>
         <div className="fitcheck-style-grid">
           {STYLE_OPTIONS.map(s => (
@@ -248,25 +273,52 @@ export const FitCheckPage = () => {
           {result.imageBase64 && (
             <img src={`data:image/png;base64,${result.imageBase64}`} alt="コーデ提案" className="fitcheck-result-img" />
           )}
-          {result.text && <MarkdownView text={result.text} />}
-
-          <div className="fitcheck-illustration-section">
-            <button
-              className="fitcheck-submit fitcheck-illust-btn"
-              onClick={handleGenerateIllustration}
-              disabled={illustrationLoading}
-            >
-              {illustrationLoading ? '生成中...' : '🎨 コーデイラストを生成'}
-            </button>
-            {illustrationError && <p className="fitcheck-error">{illustrationError}</p>}
-            {illustrationBase64 && (
-              <img
-                src={`data:image/png;base64,${illustrationBase64}`}
-                alt="コーデイラスト"
-                className="fitcheck-result-img"
-              />
-            )}
-          </div>
+          {result.text
+            .split(/(?=\n##[^\n]*パターン\d)/)
+            .filter(s => /##[^\n]*パターン\d/.test(s))
+            .map((patternText, i) => (
+              <div key={i} className="fitcheck-pattern-row">
+                <div className="fitcheck-pattern-text">
+                  <MarkdownView text={patternText} />
+                </div>
+                <div className="fitcheck-illust-pattern">
+                  <p className="fitcheck-illust-pattern-label">パターン {i + 1} のイラスト</p>
+                  {illustrationLoadings[i] ? (
+                    <div className="fitcheck-illust-loading">
+                      <div className="fitcheck-illust-emojis">
+                        <span>👗</span><span>✨</span><span>👔</span><span>✨</span><span>👠</span>
+                      </div>
+                      <p className="fitcheck-illust-loading-text">コーデをイラスト化中...</p>
+                    </div>
+                  ) : (
+                    <button
+                      className="fitcheck-submit fitcheck-illust-btn"
+                      onClick={() => handleGenerateIllustration(i)}
+                      disabled={isAnyIllustrationLoading}
+                    >
+                      🎨 イラストを生成
+                    </button>
+                  )}
+                  {illustrationErrors[i] && (
+                    <p className="fitcheck-error">{illustrationErrors[i]}</p>
+                  )}
+                  {illustrationUrls[i] && (
+                    <img
+                      src={illustrationUrls[i]!}
+                      alt={`コーデイラスト パターン${i + 1}`}
+                      className="fitcheck-result-illust-img"
+                      referrerPolicy="no-referrer"
+                      onLoad={() => {
+                        clearIllustrationTimer(i)
+                        setIllustrationLoadings(prev => { const n = [...prev]; n[i] = false; return n })
+                      }}
+                      onError={() => handleIllustrationError(i)}
+                    />
+                  )}
+                </div>
+              </div>
+            ))
+          }
         </div>
       )}
     </div>

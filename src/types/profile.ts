@@ -4,6 +4,7 @@ export interface Profile {
   bio: string
   email: string
   image: string
+  gender?: 'mens' | 'womens' | 'kids'
   preferredLine?: string
   preferredMeetingArea?: string
   height?: number
