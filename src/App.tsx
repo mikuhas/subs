@@ -1,6 +1,8 @@
 import './App.css'
 import logo from './assets/logo.png'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { errorEmitter } from './lib/errorEmitter'
+import { ErrorModal } from './components/ui/ErrorModal'
 import { useMatchingApp } from './composables/useMatchingApp'
 import { TabNavigation } from './components/ui/TabNavigation'
 import { SearchSection } from './components/ui/SearchSection'
@@ -177,9 +179,18 @@ function MainApp() {
 
 function App() {
   const { isLoggedIn } = useAuth()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    errorEmitter.setHandler(setErrorMessage)
+  }, [])
+
   return (
     <ReviewProvider>
       {isLoggedIn ? <MainApp /> : <LoginPage />}
+      {errorMessage && (
+        <ErrorModal message={errorMessage} onClose={() => setErrorMessage(null)} />
+      )}
     </ReviewProvider>
   )
 }

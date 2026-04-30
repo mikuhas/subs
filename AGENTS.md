@@ -1,77 +1,57 @@
-# マッチングアプリ(SubS)
+# SubS - マッチングアプリ
 
-## 実装済み機能
+## カラー
+- メイン: #11C5C8
+- サブ: #FF6E5E
+- 文字: #233A5A
+- 背景: #F8FAFC
 
-### 認証機能
-- ログイン画面 (LoginPage)
-- ユーザー認証 (AuthContext)
-
-### 検索機能
-- ランダムユーザー表示 (年齢±10で絞り込み)
-- 路線選択 (HeartRails API 連携)
-- コミュニティタグ選択
-- いいね/スキップ機能
-
-### リスト管理
-- いいねしたユーザー一覧
-- スキップしたユーザー一覧
-- ユーザー削除機能
-
-### メッセージ機能
-- メッセージページ (MessagesPage)
-- 会話画面 (ConversationView)
-- メッセージコンテキスト (MessageContext)
-
-### コミュニティ機能
-- コミュニティ一覧 (CommunityPage)
-- コミュニティ詳細 (CommunityDetail)
-- コミュニティコンテキスト (CommunityContext)
-
-### マイページ
-- プロフィール編集 (MyPage)
-- いいね/スキップ統計表示
-
-### UIコンポーネント
-- TabNavigation: タブ切り替え
-- SearchSection: 検索条件入力
-- ProfileCard: ユーザーカード表示
-- ProfileDetail: ユーザー詳細モーダル
-- UserListTab: ユーザーリスト表示
-
-## ディレクトリ構成 (Vite ベストプラクティス)
-
+## 構成
 ```
 src/
-├── assets/              # 静的アセット (画像、フォント)
-├── components/
-│   ├── layouts/         # レイアウトコンポーネント
-│   ├── pages/           # ページコンポーネント
-│   │   ├── auth/       # 認証ページ
-│   │   ├── community/ # コミュニティページ
-│   │   ├── messages/  # メッセージページ
-│   │   └── mypage/     # マイページ
-│   └── ui/             # UIコンポーネント (Button, Card, Modal等)
-├── composables/        # カスタムフック (useXxx 形式)
-├── contexts/           # React Context
-├── data/               # 静的データ (mockデータ)
-├── types/              # TypeScript 型定義
-└── utils/              # ユーティリティ関数
+├── components/pages/   # ページ (auth, community, messages, mypage, fitcheck, userboard)
+├── components/ui/      # UI (Button, Card, Modal等)
+├── composables/        # useXxx フック
+├── contexts/           # React Context (Auth, Message, Community, Review)
+├── data/               # mockデータ
+├── types/              # TypeScript型
+└── utils/              # ユーティリティ
 ```
 
-### 命名規則
-- コンポーネント: PascalCase (例: `ProfileCard.tsx`)
-- フック/コンポーザブル: camelCase + use prefix (例: `useMatchingApp.ts`)
-- ユーティリティ: camelCase (例: `userService.ts`)
-- 型: PascalCase (例: `User.ts`)
+## 命名規則
+- コンポーネント: PascalCase
+- フック: useXxx
+- ユーティリティ: camelCase
+- 型: PascalCase
 
-### import パス規則
-- 同じディレクトリ: `./componentName`
-- 1階層上: `../componentName`
-- 2階層上: `../../componentName`
-- 3階層上: `../../../componentName`
+## import
+- 同じ: `./name`
+- 1階層上: `../name`
+- 2階層上: `../../name`
 
-## カラーコード
-メインカラー：#11C5C8
-サブカラー：#FF6E5E
-文字カラー：#233A5A
-背景：#F8FAFC
+## 主要型
+```typescript
+// user.ts
+interface User {
+  id: number
+  name: string
+  age: number
+  bio: string
+  image: string
+  subImages?: string[]
+  line: string
+  communityIds: number[]
+  distanceKm: number
+}
+```
+
+## コンテキスト
+- AuthContext: 認証状態管理
+- MessageContext: メッセージ管理
+- CommunityContext: コミュニティ管理
+- ReviewContext: レビュ管理
+
+## コンポーザブル
+- useMatchingApp: マッチング機能 (検索、いいね、スキップ、一致)
+- useRailwayLines: 路線データ取得
+

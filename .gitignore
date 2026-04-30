@@ -12,12 +12,23 @@ dist
 dist-ssr
 *.local
 
+# Claude
+.claude/
+
+# 作業メモ
+追加したい機能.md
+
 # Backend (別リポジトリ化を想定 — .env等はbackend/.gitignoreで管理)
 backend/.env
 backend/log/
 backend/tmp/
 backend/vendor/bundle/
 backend/.bundle/
+
+# Test coverage
+coverage/
+.cache/
+.parcel-cache/
 
 # Editor directories and files
 .vscode/*

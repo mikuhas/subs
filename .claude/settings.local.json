@@ -4,7 +4,26 @@
       "Bash(npx tsc *)",
       "WebSearch",
       "Bash(npm install *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(docker-compose ps *)",
+      "Bash(docker info *)",
+      "Bash(docker-compose run *)",
+      "Bash(docker compose *)",
+      "PowerShell(Start-Process \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\" -ErrorAction SilentlyContinue; Start-Sleep -Seconds 3; Write-Output \"Docker Desktop起動コマンド送信完了\")",
+      "Bash(docker-compose up *)",
+      "Bash(docker-compose logs *)",
+      "Bash(npm run *)",
+      "Bash(docker-compose down *)",
+      "Bash(make init *)",
+      "Bash(docker exec backend_api_run_2f0f2df21b53 *)",
+      "Bash(docker stop backend_api_run_2f0f2df21b53 *)",
+      "Bash(docker-compose build *)",
+      "Bash(docker exec backend_db_1 *)",
+      "Bash(docker-compose restart *)",
+      "Bash(xargs grep *)",
+      "Bash(xargs cat *)",
+      "Bash(docker-compose *)",
+      "Bash(curl *)"
     ]
   }
 }

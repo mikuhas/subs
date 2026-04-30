@@ -1,140 +1,110 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { useQuery, useMutation } from '@apollo/client'
 import { User } from '../types/user'
-import { getRandomUserByAge, getCompletelyRandomUser } from '../utils/userService'
-import { mockUsers } from '../data/users'
+import { useAuth } from '../contexts/AuthContext'
+import { CANDIDATES, SWIPE_USER } from '../lib/graphql/operations'
 
-export const useMatchingApp = (profileAge?: number) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [likedUsers, setLikedUsers] = useState<User[]>([])
+const mapApiUser = (u: {
+  id: string; name: string; age: number; bio?: string | null
+  imageUrl?: string | null; line?: string | null
+  communityIds: number[]; distanceKm?: number | null
+}): User => ({
+  id: parseInt(u.id),
+  name: u.name,
+  age: u.age,
+  bio: u.bio ?? '',
+  image: u.imageUrl ?? '',
+  line: u.line ?? '',
+  communityIds: u.communityIds,
+  distanceKm: u.distanceKm ?? 0,
+})
+
+// profileAge は後方互換のため残すが API フィルタは不要（サーバー側で処理）
+export const useMatchingApp = (_profileAge?: number) => {
+  const { isLoggedIn } = useAuth()
+
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [likedUsers, setLikedUsers]     = useState<User[]>([])
   const [skippedUsers, setSkippedUsers] = useState<User[]>([])
   const [matchedUsers, setMatchedUsers] = useState<User[]>([])
-  const [receivedLikes, setReceivedLikes] = useState<User[]>(() => mockUsers.slice(0, 2))
-  const [newMatch, setNewMatch] = useState<User | null>(null)
-  const [activeTab, setActiveTab] = useState<'search' | 'activity' | 'messages' | 'community' | 'mypage'>('search')
+  const [receivedLikes]                 = useState<User[]>([])
+  const [newMatch, setNewMatch]         = useState<User | null>(null)
+  const [activeTab, setActiveTab]       = useState<'search' | 'activity' | 'messages' | 'community' | 'mypage'>('search')
   const [selectedLine, setSelectedLine] = useState('')
   const [selectedCommunityId, setSelectedCommunityId] = useState<number | ''>('')
-  const [hasSearched, setHasSearched] = useState(false)
+  const [hasSearched, setHasSearched]   = useState(false)
 
-  useEffect(() => {
-    setCurrentUser(null)
-    setHasSearched(false)
-  }, [selectedLine, selectedCommunityId])
+  const { data: candidatesData, refetch } = useQuery(CANDIDATES, {
+    skip: !isLoggedIn,
+    fetchPolicy: 'network-only',
+  })
+
+  const [swipeUserMutation] = useMutation(SWIPE_USER)
+
+  const allCandidates: User[] = useMemo(() => {
+    if (!candidatesData?.candidates) return []
+    return candidatesData.candidates.map(mapApiUser)
+  }, [candidatesData])
+
+  // ライン・コミュニティのフィルタはフロントエンドで適用
+  const filteredCandidates = useMemo(() => allCandidates.filter(u => {
+    if (selectedLine && u.line !== selectedLine) return false
+    if (selectedCommunityId && !u.communityIds.includes(selectedCommunityId as number)) return false
+    return true
+  }), [allCandidates, selectedLine, selectedCommunityId])
+
+  const currentUser = filteredCandidates[currentIndex] ?? null
+
+  const handleLike = useCallback(async () => {
+    if (!currentUser) return
+    setHasSearched(true)
+    setLikedUsers(prev => prev.some(u => u.id === currentUser.id) ? prev : [...prev, currentUser])
+
+    const { data } = await swipeUserMutation({
+      variables: { toUserId: String(currentUser.id), action: 'like' },
+    })
+    if (data?.swipeUser?.matched) {
+      setMatchedUsers(prev => prev.some(u => u.id === currentUser.id) ? prev : [...prev, currentUser])
+      setNewMatch(currentUser)
+    }
+    setCurrentIndex(prev => prev + 1)
+  }, [currentUser, swipeUserMutation])
+
+  const handleSkip = useCallback(async () => {
+    if (!currentUser) return
+    setHasSearched(true)
+    setSkippedUsers(prev => prev.some(u => u.id === currentUser.id) ? prev : [...prev, currentUser])
+    await swipeUserMutation({
+      variables: { toUserId: String(currentUser.id), action: 'skip' },
+    })
+    setCurrentIndex(prev => prev + 1)
+  }, [currentUser, swipeUserMutation])
 
   const findRandomUser = useCallback(() => {
-    if (!profileAge || profileAge === 0) {
-      alert('マイページで年齢を設定してください')
-      return
-    }
     setHasSearched(true)
-    const excludeIds = [...likedUsers.map(u => u.id), ...skippedUsers.map(u => u.id)]
-    const user = getRandomUserByAge(
-      profileAge,
-      excludeIds,
-      selectedLine || undefined,
-      selectedCommunityId || undefined,
-    )
-    if (!user) {
-      alert('条件に合致する相手が見つかりませんでした')
-      setCurrentUser(null)
-      return
-    }
-    setCurrentUser(user)
-  }, [profileAge, likedUsers, skippedUsers, selectedLine, selectedCommunityId])
+    setCurrentIndex(0)
+    refetch()
+  }, [refetch])
 
-  const findNextUser = useCallback((excludeIds: number[]) => {
-    if (!profileAge || profileAge === 0) { setCurrentUser(null); return }
-    const user = getRandomUserByAge(
-      profileAge,
-      excludeIds,
-      selectedLine || undefined,
-      selectedCommunityId || undefined,
-    )
-    setCurrentUser(user)
-  }, [profileAge, selectedLine, selectedCommunityId])
-
-  const findRandomMatchUser = useCallback(() => {
-    if (!profileAge || profileAge === 0) {
-      alert('マイページで年齢を設定してください')
-      return
-    }
-    const excludeIds = [...likedUsers.map(u => u.id), ...skippedUsers.map(u => u.id)]
-    const user = getCompletelyRandomUser(profileAge, excludeIds)
-    if (user) {
-      setCurrentUser(user)
-      setHasSearched(true)
-    } else {
-      alert('条件に合う相手が見つかりませんでした')
-    }
-  }, [profileAge, likedUsers, skippedUsers])
+  const findRandomMatchUser = findRandomUser
 
   const doRandomMatch = useCallback(() => {
-    if (!profileAge || profileAge === 0) {
-      alert('マイページで年齢を設定してください')
-      return
-    }
-    const excludeIds = [
-      ...likedUsers.map(u => u.id),
-      ...skippedUsers.map(u => u.id),
-      ...matchedUsers.map(u => u.id),
-    ]
-    const user = getCompletelyRandomUser(profileAge, excludeIds)
-    if (user) {
-      setMatchedUsers(prev => [...prev, user])
-      setNewMatch(user)
-    } else {
-      alert('条件に合う相手が見つかりませんでした')
-    }
-  }, [profileAge, likedUsers, skippedUsers, matchedUsers])
+    if (!currentUser) return
+    setMatchedUsers(prev => prev.some(u => u.id === currentUser.id) ? prev : [...prev, currentUser])
+    setNewMatch(currentUser)
+  }, [currentUser])
 
-  const handleLike = useCallback(() => {
-    if (!currentUser || likedUsers.some(u => u.id === currentUser.id)) return
-    const newLiked = [...likedUsers, currentUser]
-    const newSkipped = skippedUsers.filter(u => u.id !== currentUser.id)
-    setLikedUsers(newLiked)
-    setSkippedUsers(newSkipped)
-
-    // いいねされたリストに居る相手 → 自動マッチング
-    if (receivedLikes.some(u => u.id === currentUser.id)) {
-      setMatchedUsers(prev => [...prev, currentUser])
-      setReceivedLikes(prev => prev.filter(u => u.id !== currentUser.id))
-      setNewMatch(currentUser)
-    } else if (Math.random() < 0.6) {
-      setMatchedUsers(prev => [...prev, currentUser])
-      setNewMatch(currentUser)
-    }
-
-    findNextUser([...newLiked.map(u => u.id), ...newSkipped.map(u => u.id)])
-  }, [currentUser, likedUsers, skippedUsers, receivedLikes, findNextUser])
-
-  const handleSkip = useCallback(() => {
-    if (!currentUser || skippedUsers.some(u => u.id === currentUser.id)) return
-    const newSkipped = [...skippedUsers, currentUser]
-    const newLiked = likedUsers.filter(u => u.id !== currentUser.id)
-    setSkippedUsers(newSkipped)
-    setLikedUsers(newLiked)
-    findNextUser([...newLiked.map(u => u.id), ...newSkipped.map(u => u.id)])
-  }, [currentUser, likedUsers, skippedUsers, findNextUser])
-
-  // いいねされたリストからいいね返し → マッチング確定
   const handleLikeBack = useCallback((user: User) => {
     setMatchedUsers(prev => prev.some(u => u.id === user.id) ? prev : [...prev, user])
     setLikedUsers(prev => prev.some(u => u.id === user.id) ? prev : [...prev, user])
-    setReceivedLikes(prev => prev.filter(u => u.id !== user.id))
     setNewMatch(user)
   }, [])
 
-  const clearNewMatch = useCallback(() => setNewMatch(null), [])
-
-  const dismissReceivedLike = useCallback((id: number) => {
-    setReceivedLikes(prev => prev.filter(u => u.id !== id))
-  }, [])
-
-  const removeLiked = useCallback((id: number) => {
-    setLikedUsers(prev => prev.filter(u => u.id !== id))
-    setMatchedUsers(prev => prev.filter(u => u.id !== id))
-  }, [])
-  const removeSkipped = useCallback((id: number) => setSkippedUsers(prev => prev.filter(u => u.id !== id)), [])
-  const removeMatched = useCallback((id: number) => setMatchedUsers(prev => prev.filter(u => u.id !== id)), [])
+  const clearNewMatch      = useCallback(() => setNewMatch(null), [])
+  const dismissReceivedLike = useCallback((_id: number) => {}, [])
+  const removeLiked        = useCallback((id: number) => setLikedUsers(prev => prev.filter(u => u.id !== id)), [])
+  const removeSkipped      = useCallback((id: number) => setSkippedUsers(prev => prev.filter(u => u.id !== id)), [])
+  const removeMatched      = useCallback((id: number) => setMatchedUsers(prev => prev.filter(u => u.id !== id)), [])
 
   return useMemo(() => ({
     currentUser,
@@ -161,5 +131,11 @@ export const useMatchingApp = (profileAge?: number) => {
     removeLiked,
     removeSkipped,
     removeMatched,
-  }), [currentUser, likedUsers, skippedUsers, matchedUsers, receivedLikes, newMatch, activeTab, selectedLine, selectedCommunityId, hasSearched, findRandomUser, findRandomMatchUser, doRandomMatch, handleLike, handleSkip, handleLikeBack, clearNewMatch, dismissReceivedLike, removeLiked, removeSkipped, removeMatched])
+  }), [
+    currentUser, likedUsers, skippedUsers, matchedUsers, receivedLikes, newMatch,
+    activeTab, selectedLine, selectedCommunityId, hasSearched,
+    findRandomUser, findRandomMatchUser, doRandomMatch,
+    handleLike, handleSkip, handleLikeBack, clearNewMatch,
+    dismissReceivedLike, removeLiked, removeSkipped, removeMatched,
+  ])
 }
