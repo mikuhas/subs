@@ -3594,3 +3594,134 @@ h1 {
 }
 
 .error-modal-btn:hover { background: #c62828; }
+
+.mpe-save-error {
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  background: #fff0f0;
+  border: 1px solid #ffcdd2;
+  border-radius: 10px;
+  color: #c62828;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ── 人気度セクション ──────────────────────────────────────── */
+.pd-popularity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pd-pop-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pd-pop-stat {
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.pd-pop-icon {
+  font-size: 1.3rem;
+}
+
+.pd-pop-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pd-pop-label {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.pd-pop-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.pd-pop-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pd-pop-bar {
+  flex: 1;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pd-pop-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #11C5C8, #ff6b6b);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.pd-pop-bar-label {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* ── 相手が見つかりませんアラート ─────────────────────────── */
+.no-results-alert {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 24px 24px;
+  max-width: 320px;
+  width: 92%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.no-results-alert-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.no-results-alert-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.no-results-alert-body {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.7;
+}
+
+.no-results-alert-btn {
+  margin-top: 6px;
+  padding: 10px 36px;
+  background: #11C5C8;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.no-results-alert-btn:hover { background: #0eadb0; }

@@ -5,6 +5,7 @@ import { Profile } from '../../../types/profile'
 import { User } from '../../../types/user'
 import { useRailwayLines } from '../../../composables/useRailwayLines'
 import { mockCommunities } from '../../../data/communities'
+import { uploadProfileImage } from '../../../lib/uploadImage'
 
 const BODY_TYPES = ['スリム', '普通', 'がっちり', 'ぽっちゃり', '筋肉質']
 
@@ -50,6 +51,9 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const { profile, logout, updateProfile } = useAuth()
   const { joinedIds, leave } = useCommunity()
   const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [showLikedHistory, setShowLikedHistory] = useState(false)
   const [showSkippedHistory, setShowSkippedHistory] = useState(false)
   const [editForm, setEditForm] = useState<Profile | null>(null)
@@ -60,29 +64,43 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const { lines, loading: linesLoading, error: linesError } = useRailwayLines()
   const joinedCommunities = mockCommunities.filter(c => joinedIds.includes(c.id))
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const dataUrl = reader.result as string
-        setUploadedImages(prev => [...prev, dataUrl])
-        setEditForm(f => f ? { ...f, image: dataUrl } : f)
-      }
-      reader.readAsDataURL(file)
-    })
     e.target.value = ''
+    if (files.length === 0) return
+    setUploading(true)
+    setSaveError(null)
+    try {
+      const email = profile?.email ?? 'user'
+      const urls = await Promise.all(files.map(f => uploadProfileImage(f, email)))
+      setUploadedImages(prev => [...prev, ...urls])
+      setEditForm(f => f ? { ...f, image: urls[0] } : f)
+    } catch {
+      setSaveError('画像のアップロードに失敗しました')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleEditStart = () => {
     if (profile) { setEditForm({ ...profile }); setIsEditing(true) }
   }
 
-  const handleSave = () => {
-    if (editForm) { updateProfile(editForm); setIsEditing(false); setEditForm(null) }
+  const handleSave = async () => {
+    if (!editForm) return
+    setSaving(true)
+    setSaveError(null)
+    const result = await updateProfile(editForm)
+    setSaving(false)
+    if (!result.success) {
+      setSaveError(result.errors[0] ?? '保存に失敗しました')
+      return
+    }
+    setIsEditing(false)
+    setEditForm(null)
   }
 
-  const handleCancel = () => { setIsEditing(false); setEditForm(null) }
+  const handleCancel = () => { setIsEditing(false); setEditForm(null); setSaveError(null) }
 
   const set = <K extends keyof Profile>(key: K, val: Profile[K]) =>
     setEditForm(f => f ? { ...f, [key]: val } : f)
@@ -98,7 +116,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const discardField = () => setEditingField(null)
 
   const FIELD_LABELS: Partial<Record<keyof Profile, string>> = {
-    name: '名前', age: '年齢', bio: '自己紹介',
+    name: '名前', bio: '自己紹介',
     preferredLine: '好きな沿線', preferredMeetingArea: '出会いたいエリア',
     height: '身長', bodyType: '体型',
     frequentStation: 'よく遊ぶ駅', firstDateStation: '最初のデート希望場所',
@@ -115,19 +133,6 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
             onChange={e => setFieldDraft(e.target.value)}
             autoFocus
           />
-        )
-      case 'age':
-        return (
-          <div className="mpe-inline">
-            <input
-              className="mpe-field-select mpe-height-input"
-              type="number" min="18" max="99"
-              value={fieldDraft as number ?? ''}
-              onChange={e => setFieldDraft(Number(e.target.value))}
-              autoFocus
-            />
-            <span className="mpe-unit">歳</span>
-          </div>
         )
       case 'bio':
         return (
@@ -232,8 +237,8 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                     <img src={url} alt="" />
                   </button>
                 ))}
-                <button className="pd-thumb mpe-upload-btn" onClick={() => fileInputRef.current?.click()}>
-                  <span>＋</span>
+                <button className="pd-thumb mpe-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  <span>{uploading ? '⏳' : '＋'}</span>
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImageUpload} />
               </div>
@@ -252,13 +257,6 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                   </div>
                 </div>
                 <i className="ri-arrow-right-s-line mpe-tile-chevron" />
-              </div>
-
-              {/* 年齢 */}
-              <div className="mpe-tile" onClick={() => openField('age', editForm?.age)}>
-                <span className="mpe-tile-icon">🎂</span>
-                <span className="mpe-tile-label">年齢</span>
-                <span className="mpe-tile-value">{editForm?.age ? `${editForm.age}歳` : '—'}</span>
               </div>
 
               {/* 身長 */}
@@ -336,9 +334,12 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
             </div>
 
             {/* 保存・キャンセル */}
+            {saveError && <p className="mpe-save-error">{saveError}</p>}
             <div className="mpe-actions">
-              <button className="mpe-save-btn" onClick={handleSave}>保存</button>
-              <button className="mpe-cancel-btn" onClick={handleCancel}>キャンセル</button>
+              <button className="mpe-save-btn" onClick={handleSave} disabled={saving || uploading}>
+                {saving ? '保存中...' : uploading ? 'アップロード中...' : '保存'}
+              </button>
+              <button className="mpe-cancel-btn" onClick={handleCancel} disabled={saving || uploading}>キャンセル</button>
             </div>
 
             {/* フィールド編集モーダル */}
@@ -347,7 +348,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                 <div className="field-modal" onClick={e => e.stopPropagation()}>
                   <div className="field-modal-header">
                     <span className="field-modal-icon">{
-                      ({ name:'👤', age:'🎂', bio:'✏️', preferredLine:'🚃',
+                      ({ name:'👤', bio:'✏️', preferredLine:'🚃',
                         preferredMeetingArea:'📍', height:'📏', bodyType:'👕',
                         frequentStation:'🗺️', firstDateStation:'💑' } as Record<string, string>)[editingField]
                     }</span>

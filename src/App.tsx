@@ -40,6 +40,8 @@ function MainApp() {
     selectedCommunityId,
     setSelectedCommunityId,
     hasSearched,
+    noResults,
+    clearNoResults,
     findRandomUser,
     doRandomMatch,
     handleLike,
@@ -172,6 +174,21 @@ function MainApp() {
 
       {newMatch && (
         <MatchPopup user={newMatch} onClose={clearNewMatch} />
+      )}
+
+      {noResults && (
+        <div className="modal-overlay" onClick={clearNoResults}>
+          <div className="no-results-alert" onClick={e => e.stopPropagation()}>
+            <div className="no-results-alert-icon">🔍</div>
+            <h3 className="no-results-alert-title">相手が見つかりませんでした</h3>
+            <p className="no-results-alert-body">
+              条件に合う相手が現在いません。<br />
+              沿線・コミュニティの条件を変えるか、<br />
+              時間をおいて再度お試しください。
+            </p>
+            <button className="no-results-alert-btn" onClick={clearNoResults}>閉じる</button>
+          </div>
+        </div>
       )}
     </div>
   )

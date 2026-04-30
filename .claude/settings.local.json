@@ -23,7 +23,10 @@
       "Bash(xargs grep *)",
       "Bash(xargs cat *)",
       "Bash(docker-compose *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(docker volume *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'candidates: {len\\(d[\\\\\"data\\\\\"][\\\\\"candidates\\\\\"]\\)}件'\\)\")",
+      "Bash(docker exec *)"
     ]
   }
 }

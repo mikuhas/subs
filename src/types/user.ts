@@ -8,4 +8,6 @@ export interface User {
   line: string
   communityIds: number[]
   distanceKm: number
+  sentLikeCount?: number
+  sentSkipCount?: number
 }

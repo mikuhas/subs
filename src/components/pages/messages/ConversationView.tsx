@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { User } from '../../../types/user'
 import { useMessage } from '../../../contexts/MessageContext'
 
+
 interface ConversationViewProps {
   user: User
   onClose: () => void
@@ -15,22 +16,28 @@ const MOOD_OPTIONS = [
 ]
 
 export const ConversationView = ({ user, onClose }: ConversationViewProps) => {
-  const { getMessages, sendMessage, setIntention, getIntention } = useMessage()
+  const { getMessages, sendMessage, subscribeToConversation, setIntention, getIntention } = useMessage()
   const [text, setText] = useState('')
   const [showMood, setShowMood] = useState(false)
   const messages = getMessages(user.id)
   const intention = getIntention(user.id)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Firestore リアルタイム購読
+  useEffect(() => {
+    const unsubscribe = subscribeToConversation(user.id)
+    return unsubscribe
+  }, [user.id, subscribeToConversation])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = text.trim()
     if (!trimmed) return
-    sendMessage(user.id, trimmed)
     setText('')
+    await sendMessage(user.id, trimmed)
   }
 
   const handleKey = (e: React.KeyboardEvent) => {

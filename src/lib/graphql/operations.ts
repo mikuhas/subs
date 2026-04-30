@@ -51,13 +51,14 @@ export const UPDATE_PROFILE = gql`
     $frequentStation: String
     $firstDateStation: String
     $imageUrl: String
+    $randomMatchEnabled: Boolean
   ) {
     updateProfile(input: {
       name: $name bio: $bio age: $age gender: $gender
       height: $height bodyType: $bodyType line: $line
       preferredLine: $preferredLine preferredMeetingArea: $preferredMeetingArea
       frequentStation: $frequentStation firstDateStation: $firstDateStation
-      imageUrl: $imageUrl
+      imageUrl: $imageUrl randomMatchEnabled: $randomMatchEnabled
     }) {
       user {
         id name age bio imageUrl gender line
@@ -101,6 +102,16 @@ export const CANDIDATES = gql`
   query Candidates {
     candidates {
       id name age bio imageUrl line communityIds distanceKm
+      sentLikeCount sentSkipCount
+    }
+  }
+`
+
+export const RECEIVED_LIKES = gql`
+  query ReceivedLikes {
+    receivedLikes {
+      id name age bio imageUrl line communityIds distanceKm
+      sentLikeCount sentSkipCount
     }
   }
 `
@@ -109,7 +120,7 @@ export const MATCHES = gql`
   query Matches {
     matches {
       id
-      partner { id name age bio imageUrl line }
+      partner { id name age bio imageUrl line communityIds distanceKm sentLikeCount sentSkipCount }
       matchedAt
     }
   }

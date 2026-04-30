@@ -1,24 +1,25 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useMutation, useLazyQuery } from '@apollo/client'
 import { Profile } from '../types/profile'
-import { SIGN_IN, ME } from '../lib/graphql/operations'
+import { SIGN_IN, ME, UPDATE_PROFILE } from '../lib/graphql/operations'
 
 interface AuthContextType {
   isLoggedIn: boolean
   profile: Profile | null
   login: (email: string, password: string) => Promise<{ success: boolean; errors: string[] }>
   logout: () => void
-  updateProfile: (profile: Profile) => void
+  updateProfile: (profile: Profile) => Promise<{ success: boolean; errors: string[] }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
 const mapUserToProfile = (user: {
-  name: string; age: number; bio?: string | null; imageUrl?: string | null
+  id: string; name: string; age: number; bio?: string | null; imageUrl?: string | null
   gender?: string | null; preferredLine?: string | null; preferredMeetingArea?: string | null
   height?: number | null; bodyType?: string | null; randomMatchEnabled?: boolean
   frequentStation?: string | null; firstDateStation?: string | null
 }, email: string): Profile => ({
+  id: parseInt(user.id),
   name: user.name,
   age: user.age,
   bio: user.bio ?? '',
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null)
 
   const [signIn] = useMutation(SIGN_IN)
+  const [updateProfileMutation] = useMutation(UPDATE_PROFILE)
   const [fetchMe] = useLazyQuery(ME)
 
   // ページリロード時にトークンからセッションを復元
@@ -84,7 +86,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(null)
   }
 
-  const updateProfile = (newProfile: Profile) => setProfile(newProfile)
+  const updateProfile = async (newProfile: Profile): Promise<{ success: boolean; errors: string[] }> => {
+    const email = localStorage.getItem('auth_email') ?? profile?.email ?? ''
+    let data: Awaited<ReturnType<typeof updateProfileMutation>>['data']
+    try {
+      const res = await updateProfileMutation({
+        variables: {
+          name: newProfile.name,
+          age: newProfile.age,
+          bio: newProfile.bio,
+          imageUrl: newProfile.image,
+          gender: newProfile.gender,
+          preferredLine: newProfile.preferredLine,
+          preferredMeetingArea: newProfile.preferredMeetingArea,
+          height: newProfile.height,
+          bodyType: newProfile.bodyType,
+          frequentStation: newProfile.frequentStation,
+          firstDateStation: newProfile.firstDateStation,
+          randomMatchEnabled: newProfile.randomMatchEnabled,
+        },
+      })
+      data = res.data
+    } catch {
+      return { success: false, errors: ['通信エラーが発生しました'] }
+    }
+    const result = data?.updateProfile
+    if (!result) return { success: false, errors: ['通信エラーが発生しました'] }
+    if (result.errors.length > 0) return { success: false, errors: result.errors }
+
+    setProfile(mapUserToProfile(result.user, email))
+    return { success: true, errors: [] }
+  }
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, profile, login, logout, updateProfile }}>

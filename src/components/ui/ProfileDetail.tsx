@@ -92,6 +92,52 @@ export const ProfileDetail = ({ user, onBack, onOpenBoard }: ProfileDetailProps)
           )}
         </div>
 
+        {/* アクティビティ */}
+        {(user.sentLikeCount !== undefined || user.sentSkipCount !== undefined) && (() => {
+          const likes = user.sentLikeCount ?? 0
+          const skips = user.sentSkipCount ?? 0
+          const total = likes + skips
+          const likeRate = total > 0 ? Math.round((likes / total) * 100) : 0
+          return (
+            <div className="pd-section">
+              <h3 className="pd-section-title">アクティビティ</h3>
+              <div className="pd-popularity">
+                <div className="pd-pop-stats">
+                  <div className="pd-pop-stat">
+                    <span className="pd-pop-icon">❤️</span>
+                    <div className="pd-pop-texts">
+                      <span className="pd-pop-label">いいねした</span>
+                      <span className="pd-pop-value">{likes.toLocaleString()}件</span>
+                    </div>
+                  </div>
+                  <div className="pd-pop-stat">
+                    <span className="pd-pop-icon">👋</span>
+                    <div className="pd-pop-texts">
+                      <span className="pd-pop-label">スキップした</span>
+                      <span className="pd-pop-value">{skips.toLocaleString()}件</span>
+                    </div>
+                  </div>
+                  <div className="pd-pop-stat">
+                    <span className="pd-pop-icon">📊</span>
+                    <div className="pd-pop-texts">
+                      <span className="pd-pop-label">いいね率</span>
+                      <span className="pd-pop-value">{total > 0 ? `${likeRate}%` : '—'}</span>
+                    </div>
+                  </div>
+                </div>
+                {total > 0 && (
+                  <div className="pd-pop-bar-wrap">
+                    <div className="pd-pop-bar">
+                      <div className="pd-pop-bar-fill" style={{ width: `${likeRate}%` }} />
+                    </div>
+                    <span className="pd-pop-bar-label">{likeRate}% いいね</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* プロフィール情報グリッド */}
         <div className="pd-section">
           <h3 className="pd-section-title">プロフィール</h3>
