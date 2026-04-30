@@ -13,6 +13,7 @@ interface MessageContextType {
   subscribeToConversation: (userId: number) => () => void
   getMessages: (userId: number) => Message[]
   hasConversation: (userId: number) => boolean
+  isConversationLoaded: (userId: number) => boolean
   conversationUserIds: number[]
   setIntention: (userId: number, intention: Intention | null) => void
   getIntention: (userId: number) => Intention | null
@@ -42,6 +43,7 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
 
   const getMessages = (userId: number) => conversations[userId] ?? []
   const hasConversation = (userId: number) => (conversations[userId]?.length ?? 0) > 0
+  const isConversationLoaded = (userId: number) => userId in conversations
   const conversationUserIds = Object.keys(conversations).map(Number).filter(id => (conversations[id]?.length ?? 0) > 0)
 
   const setIntention = (userId: number, intention: Intention | null) =>
@@ -49,7 +51,7 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
   const getIntention = (userId: number) => intentions[userId] ?? null
 
   return (
-    <MessageContext.Provider value={{ sendMessage, subscribeToConversation, getMessages, hasConversation, conversationUserIds, setIntention, getIntention }}>
+    <MessageContext.Provider value={{ sendMessage, subscribeToConversation, getMessages, hasConversation, isConversationLoaded, conversationUserIds, setIntention, getIntention }}>
       {children}
     </MessageContext.Provider>
   )

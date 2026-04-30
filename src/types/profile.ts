@@ -1,3 +1,9 @@
+export interface UserImage {
+  id: number
+  imageUrl: string
+  position: number
+}
+
 export interface Profile {
   id: number
   name: string
@@ -13,4 +19,5 @@ export interface Profile {
   randomMatchEnabled?: boolean
   frequentStation?: string
   firstDateStation?: string
+  userImages?: UserImage[]
 }

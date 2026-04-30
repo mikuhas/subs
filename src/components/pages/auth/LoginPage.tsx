@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import logo from '../../../assets/logo.png'
+import { LoadingScreen } from '../../ui/LoadingScreen'
 
 export const LoginPage = () => {
   const { login } = useAuth()
@@ -17,12 +18,17 @@ export const LoginPage = () => {
     }
     setLoading(true)
     setError('')
-    const result = await login(email, password)
+    const [result] = await Promise.all([
+      login(email, password),
+      new Promise<void>(resolve => setTimeout(resolve, 1000)),
+    ])
     setLoading(false)
     if (!result.success) {
       setError(result.errors[0] ?? 'ログインに失敗しました')
     }
   }
+
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="login-container">
@@ -37,7 +43,6 @@ export const LoginPage = () => {
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
               placeholder="example@email.com"
-              disabled={loading}
             />
           </div>
           <div className="login-field">
@@ -47,12 +52,11 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
               placeholder="パスワードを入力"
-              disabled={loading}
             />
           </div>
           {error && <p className="login-error">{error}</p>}
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'ログイン中...' : 'ログイン'}
+          <button type="submit" className="login-button">
+            ログイン
           </button>
         </form>
       </div>

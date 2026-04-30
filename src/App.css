@@ -2,6 +2,52 @@
   box-sizing: border-box;
 }
 
+/* ローディング画面 */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  background: #fff;
+  z-index: 9999;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;    }
+  50%       { transform: scale(1.07); opacity: 0.75; }
+}
+
+.loading-logo {
+  width: 160px;
+  animation: logo-pulse 1.6s ease-in-out infinite;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 10px;
+}
+
+@keyframes dot-fade {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40%           { transform: scale(1);   opacity: 1;   }
+}
+
+.loading-dots span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #11C5C8;
+  animation: dot-fade 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: 0s;    }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s;  }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s;  }
+
 body {
   margin: 0;
   background: #F8FAFC;
@@ -224,6 +270,60 @@ h1 {
 }
 
 /* プロフィールカード */
+.profile-card-wrap {
+  position: relative;
+  max-width: 400px;
+  min-width: 350px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@keyframes card-swipe-right {
+  0%   { transform: translateX(0)    rotate(0deg);  opacity: 1; }
+  100% { transform: translateX(115%) rotate(22deg); opacity: 0; }
+}
+
+@keyframes card-swipe-left {
+  0%   { transform: translateX(0)     rotate(0deg);   opacity: 1; }
+  100% { transform: translateX(-115%) rotate(-22deg); opacity: 0; }
+}
+
+.card-swipe-like {
+  animation: card-swipe-right 0.35s ease-in forwards;
+}
+
+.card-swipe-skip {
+  animation: card-swipe-left 0.35s ease-in forwards;
+}
+
+.card-stamp {
+  position: absolute;
+  top: 24px;
+  z-index: 10;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  border: 3px solid;
+  pointer-events: none;
+  user-select: none;
+}
+
+.card-stamp-like {
+  right: 20px;
+  color: #E8365D;
+  border-color: #E8365D;
+  transform: rotate(12deg);
+}
+
+.card-stamp-skip {
+  left: 20px;
+  color: #888;
+  border-color: #888;
+  transform: rotate(-12deg);
+}
+
 .profile-card {
   background: white;
   border: 2px solid #eee;
@@ -231,9 +331,6 @@ h1 {
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   animation: slideIn 0.3s ease-out;
-  max-width: 400px;
-  min-width: 350px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -1827,6 +1924,13 @@ h1 {
    =========================== */
 .messages-page { padding-bottom: 20px; }
 
+.messages-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
 .messages-page-header { margin-bottom: 20px; }
 .messages-page-header h2 { margin: 0 0 4px; font-size: 1.4rem; color: #233A5A; }
 .messages-page-header p  { margin: 0; color: #888; font-size: 0.9rem; }
@@ -1863,8 +1967,8 @@ h1 {
 }
 
 .conversation-list-info { flex: 1; min-width: 0; }
-.conversation-list-name { font-weight: 600; color: #233A5A; font-size: 0.95rem; margin-bottom: 2px; }
-.conversation-list-last { color: #999; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-list-name { font-weight: 600; color: #233A5A; font-size: 0.95rem; margin-bottom: 2px; text-align: left; }
+.conversation-list-last { color: #999; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .from-me-label { color: #11C5C8; }
 .conversation-list-time { font-size: 0.75rem; color: #bbb; flex-shrink: 0; }
 
@@ -3226,6 +3330,42 @@ h1 {
   background: rgba(255,255,255,0.7);
 }
 .mpe-upload-btn:hover { border-color: #11C5C8; color: #11C5C8; }
+
+.mpe-no-images {
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #bbb;
+  letter-spacing: 0.06em;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.mpe-thumb-wrap {
+  position: relative;
+}
+
+.mpe-thumb-delete {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  font-size: 0.7rem;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
 
 /* ── フィールドグリッド ── */
 .mpe-edit-grid {

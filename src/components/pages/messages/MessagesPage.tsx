@@ -7,9 +7,19 @@ interface MessagesPageProps {
 }
 
 export const MessagesPage = ({ matchedUsers, onOpenConversation }: MessagesPageProps) => {
-  const { getMessages, hasConversation } = useMessage()
+  const { getMessages, hasConversation, isConversationLoaded } = useMessage()
+
+  const isLoading = matchedUsers.length > 0 && matchedUsers.some(u => !isConversationLoaded(u.id))
 
   const conversationUsers = matchedUsers.filter(u => hasConversation(u.id))
+
+  if (isLoading) return (
+    <div className="messages-loading">
+      <div className="loading-dots">
+        <span /><span /><span />
+      </div>
+    </div>
+  )
 
   return (
     <div className="messages-page">

@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react'
+import { useMutation } from '@apollo/client'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useCommunity } from '../../../contexts/CommunityContext'
-import { Profile } from '../../../types/profile'
+import { Profile, UserImage } from '../../../types/profile'
 import { User } from '../../../types/user'
 import { useRailwayLines } from '../../../composables/useRailwayLines'
 import { mockCommunities } from '../../../data/communities'
 import { uploadProfileImage } from '../../../lib/uploadImage'
+import { ADD_USER_IMAGE, DELETE_USER_IMAGE } from '../../../lib/graphql/operations'
 
 const BODY_TYPES = ['スリム', '普通', 'がっちり', 'ぽっちゃり', '筋肉質']
 
@@ -27,15 +29,6 @@ const TOKYO_MEETING_AREAS = [
   '立川・国分寺', '八王子',
 ]
 
-const AVATAR_OPTIONS = [
-  'https://randomuser.me/api/portraits/lego/9.jpg',
-  'https://randomuser.me/api/portraits/lego/1.jpg',
-  'https://randomuser.me/api/portraits/lego/2.jpg',
-  'https://randomuser.me/api/portraits/lego/3.jpg',
-  'https://randomuser.me/api/portraits/lego/4.jpg',
-  'https://randomuser.me/api/portraits/lego/5.jpg',
-]
-
 const GENDER_LABEL: Record<string, string> = { mens: 'メンズ', womens: 'レディース', kids: 'キッズ' }
 
 interface MyPageProps {
@@ -50,6 +43,9 @@ interface MyPageProps {
 export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkipped, onProfileClick, onOpenFitCheck }: MyPageProps) => {
   const { profile, logout, updateProfile } = useAuth()
   const { joinedIds, leave } = useCommunity()
+  const [addUserImageMutation] = useMutation(ADD_USER_IMAGE)
+  const [deleteUserImageMutation] = useMutation(DELETE_USER_IMAGE)
+
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -57,24 +53,30 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const [showLikedHistory, setShowLikedHistory] = useState(false)
   const [showSkippedHistory, setShowSkippedHistory] = useState(false)
   const [editForm, setEditForm] = useState<Profile | null>(null)
-  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [userImages, setUserImages] = useState<UserImage[]>(profile?.userImages ?? [])
   const [editingField, setEditingField] = useState<keyof Profile | null>(null)
   const [fieldDraft, setFieldDraft] = useState<Profile[keyof Profile] | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { lines, loading: linesLoading, error: linesError } = useRailwayLines()
+  const { lines, loading: linesLoading } = useRailwayLines()
   const joinedCommunities = mockCommunities.filter(c => joinedIds.includes(c.id))
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    if (files.length === 0) return
+    if (!files.length) return
     setUploading(true)
     setSaveError(null)
     try {
-      const email = profile?.email ?? 'user'
-      const urls = await Promise.all(files.map(f => uploadProfileImage(f, email)))
-      setUploadedImages(prev => [...prev, ...urls])
-      setEditForm(f => f ? { ...f, image: urls[0] } : f)
+      const token = localStorage.getItem('auth_token') ?? ''
+      const added = (await Promise.all(
+        files.map(async f => {
+          const url = await uploadProfileImage(f, token)
+          const { data } = await addUserImageMutation({ variables: { imageUrl: url } })
+          return data?.addUserImage?.userImage as UserImage | null
+        })
+      )).filter((img): img is UserImage => img !== null)
+      setUserImages(prev => [...prev, ...added])
+      if (!editForm?.image && added[0]) set('image', added[0].imageUrl)
     } catch {
       setSaveError('画像のアップロードに失敗しました')
     } finally {
@@ -82,8 +84,22 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
     }
   }
 
+  const handleDeleteImage = async (id: number) => {
+    const target = userImages.find(img => img.id === id)
+    setUserImages(prev => prev.filter(img => img.id !== id))
+    if (target && editForm?.image === target.imageUrl) {
+      const rest = userImages.filter(img => img.id !== id)
+      set('image', rest[0]?.imageUrl ?? '')
+    }
+    await deleteUserImageMutation({ variables: { id: String(id) } })
+  }
+
   const handleEditStart = () => {
-    if (profile) { setEditForm({ ...profile }); setIsEditing(true) }
+    if (profile) {
+      setEditForm({ ...profile })
+      setUserImages(profile.userImages ?? [])
+      setIsEditing(true)
+    }
   }
 
   const handleSave = async () => {
@@ -231,11 +247,14 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                 <span className="mpe-avatar-camera">📷</span>
               </div>
               <div className="mpe-photo-strip">
-                {[...AVATAR_OPTIONS, ...uploadedImages].map(url => (
-                  <button key={url} className={`pd-thumb ${editForm?.image === url ? 'active' : ''}`}
-                    onClick={() => set('image', url)}>
-                    <img src={url} alt="" />
-                  </button>
+                {userImages.length === 0 && (
+                  <span className="mpe-no-images">NO IMAGES</span>
+                )}
+                {userImages.map(img => (
+                  <div key={img.id} className={`pd-thumb mpe-thumb-wrap ${editForm?.image === img.imageUrl ? 'active' : ''}`}>
+                    <img src={img.imageUrl} alt="" onClick={() => set('image', img.imageUrl)} />
+                    <button className="mpe-thumb-delete" onClick={() => handleDeleteImage(img.id)}>×</button>
+                  </div>
                 ))}
                 <button className="pd-thumb mpe-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                   <span>{uploading ? '⏳' : '＋'}</span>
@@ -248,7 +267,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
             <div className="mpe-edit-grid">
 
               {/* 名前 – フル幅 */}
-              <div className="mpe-tile mpe-tile-full" onClick={() => openField('name', editForm?.name)}>
+              <div className="mpe-tile mpe-tile-full" onClick={() => openField('name', editForm?.name ?? '')}>
                 <div className="mpe-tile-inner">
                   <span className="mpe-tile-icon">👤</span>
                   <div className="mpe-tile-texts">
@@ -302,7 +321,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
               </div>
 
               {/* 自己紹介 – フル幅 */}
-              <div className="mpe-tile mpe-tile-full mpe-tile-bio" onClick={() => openField('bio', editForm?.bio)}>
+              <div className="mpe-tile mpe-tile-full mpe-tile-bio" onClick={() => openField('bio', editForm?.bio ?? '')}>
                 <div className="mpe-tile-inner">
                   <span className="mpe-tile-icon">✏️</span>
                   <div className="mpe-tile-texts">

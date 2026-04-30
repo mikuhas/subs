@@ -5,6 +5,7 @@ import { SIGN_IN, ME, UPDATE_PROFILE } from '../lib/graphql/operations'
 
 interface AuthContextType {
   isLoggedIn: boolean
+  initializing: boolean
   profile: Profile | null
   login: (email: string, password: string) => Promise<{ success: boolean; errors: string[] }>
   logout: () => void
@@ -18,6 +19,7 @@ const mapUserToProfile = (user: {
   gender?: string | null; preferredLine?: string | null; preferredMeetingArea?: string | null
   height?: number | null; bodyType?: string | null; randomMatchEnabled?: boolean
   frequentStation?: string | null; firstDateStation?: string | null
+  userImages?: { id: string; imageUrl: string; position: number }[] | null
 }, email: string): Profile => ({
   id: parseInt(user.id),
   name: user.name,
@@ -33,10 +35,18 @@ const mapUserToProfile = (user: {
   randomMatchEnabled: user.randomMatchEnabled ?? true,
   frequentStation: user.frequentStation ?? undefined,
   firstDateStation: user.firstDateStation ?? undefined,
+  userImages: (user.userImages ?? []).map(img => ({
+    id: parseInt(img.id),
+    imageUrl: img.imageUrl,
+    position: img.position,
+  })),
 })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [initializing, setInitializing] = useState(
+    () => !!localStorage.getItem('auth_token'),
+  )
   const [profile, setProfile] = useState<Profile | null>(null)
 
   const [signIn] = useMutation(SIGN_IN)
@@ -47,9 +57,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
     const email = localStorage.getItem('auth_email')
-    if (!token || !email) return
+    if (!token || !email) {
+      setInitializing(false)
+      return
+    }
 
-    fetchMe().then(({ data }) => {
+    const minDelay = new Promise<void>(resolve => setTimeout(resolve, 1000))
+
+    Promise.all([fetchMe(), minDelay]).then(([{ data }]) => {
       if (data?.me) {
         setProfile(mapUserToProfile(data.me, email))
         setIsLoggedIn(true)
@@ -57,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_email')
       }
+      setInitializing(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -119,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, profile, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ isLoggedIn, initializing, profile, login, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

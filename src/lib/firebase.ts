@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getStorage } from 'firebase/storage'
 import { getFirestore } from 'firebase/firestore'
 
@@ -11,6 +11,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
+// HMR で duplicate-app エラーにならないよう既存インスタンスを再利用
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
+
 export const storage = getStorage(app)
 export const db = getFirestore(app)

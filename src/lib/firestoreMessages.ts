@@ -31,17 +31,25 @@ export const subscribeToMessages = (
     collection(db, 'conversations', convId(myId, partnerId), 'messages'),
     orderBy('createdAt', 'asc'),
   )
-  return onSnapshot(q, snapshot => {
-    const msgs: Message[] = snapshot.docs.map(doc => {
-      const d = doc.data()
-      const ts = d.createdAt as Timestamp | null
-      return {
-        id: doc.id,
-        text: d.text as string,
-        fromMe: (d.senderId as number) === myId,
-        timestamp: ts ? ts.toMillis() : Date.now(),
-      }
-    })
-    onMessages(msgs)
-  })
+
+  return onSnapshot(
+    q,
+    // includeMetadataChanges=true で pending write 中も snapshot を受け取る
+    { includeMetadataChanges: true },
+    snapshot => {
+      const msgs: Message[] = snapshot.docs
+        // pending write のドキュメントも含めて表示（createdAt が null でも除外しない）
+        .map(doc => {
+          const d = doc.data({ serverTimestamps: 'estimate' })
+          const ts = d.createdAt as Timestamp | null
+          return {
+            id: doc.id,
+            text: d.text as string,
+            fromMe: Number(d.senderId) === myId,
+            timestamp: ts ? ts.toMillis() : Date.now(),
+          }
+        })
+      onMessages(msgs)
+    },
+  )
 }

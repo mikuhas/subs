@@ -33,6 +33,7 @@ export const ME = gql`
       height bodyType preferredLine preferredMeetingArea
       frequentStation firstDateStation randomMatchEnabled distanceKm
       communityIds
+      userImages { id imageUrl position }
     }
   }
 `
@@ -65,6 +66,23 @@ export const UPDATE_PROFILE = gql`
         height bodyType preferredLine preferredMeetingArea
         frequentStation firstDateStation randomMatchEnabled
       }
+      errors
+    }
+  }
+`
+
+export const ADD_USER_IMAGE = gql`
+  mutation AddUserImage($imageUrl: String!) {
+    addUserImage(input: { imageUrl: $imageUrl }) {
+      userImage { id imageUrl position }
+      errors
+    }
+  }
+`
+
+export const DELETE_USER_IMAGE = gql`
+  mutation DeleteUserImage($id: ID!) {
+    deleteUserImage(input: { id: $id }) {
       errors
     }
   }

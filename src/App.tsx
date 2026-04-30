@@ -14,6 +14,7 @@ import { CommunityPage } from './components/pages/community/CommunityPage'
 import { MessagesPage } from './components/pages/messages/MessagesPage'
 import { ConversationView } from './components/pages/messages/ConversationView'
 import { LoginPage } from './components/pages/auth/LoginPage'
+import { LoadingScreen } from './components/ui/LoadingScreen'
 import { FitCheckPage } from './components/pages/fitcheck/FitCheckPage'
 import { ReviewModal } from './components/ui/ReviewModal'
 import { MatchPopup } from './components/ui/MatchPopup'
@@ -25,7 +26,7 @@ import { User } from './types/user'
 
 function MainApp() {
   const { profile } = useAuth()
-  const { conversationUserIds } = useMessage()
+  const { conversationUserIds, subscribeToConversation } = useMessage()
 
   const {
     currentUser,
@@ -61,6 +62,12 @@ function MainApp() {
   const [showFitCheck, setShowFitCheck] = useState(false)
   const [reviewUser, setReviewUser] = useState<User | null>(null)
 
+  useEffect(() => {
+    if (!matchedUsers.length) return
+    const unsubscribes = matchedUsers.map(u => subscribeToConversation(u.id))
+    return () => unsubscribes.forEach(fn => fn())
+  }, [matchedUsers, subscribeToConversation])
+
   const openBoard = (user: User) => {
     setSelectedUser(null)
     setBoardUser(user)
@@ -74,7 +81,7 @@ function MainApp() {
 
       <TabNavigation
         activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); setShowFitCheck(false) }}
+        onTabChange={(tab) => { setActiveTab(tab); setShowFitCheck(false); setBoardUser(null) }}
         receivedLikesCount={receivedLikes.length}
         messageCount={conversationUserIds.length}
       />
@@ -195,12 +202,14 @@ function MainApp() {
 }
 
 function App() {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, initializing } = useAuth()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     errorEmitter.setHandler(setErrorMessage)
   }, [])
+
+  if (initializing) return <LoadingScreen />
 
   return (
     <ReviewProvider>
