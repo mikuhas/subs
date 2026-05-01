@@ -4,7 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { useCommunity } from '../../../contexts/CommunityContext'
 import { Profile, UserImage } from '../../../types/profile'
 import { User } from '../../../types/user'
-import { useRailwayLines } from '../../../composables/useRailwayLines'
+import { useRailwayLines } from '../../../hooks/useRailwayLines'
 import { mockCommunities } from '../../../data/communities'
 import { uploadProfileImage } from '../../../lib/uploadImage'
 import { ADD_USER_IMAGE, DELETE_USER_IMAGE } from '../../../lib/graphql/operations'
@@ -29,7 +29,15 @@ const TOKYO_MEETING_AREAS = [
   '立川・国分寺', '八王子',
 ]
 
-const GENDER_LABEL: Record<string, string> = { mens: 'メンズ', womens: 'レディース', kids: 'キッズ' }
+const FIRST_DATE_SITUATIONS = [
+  'お昼にカフェで', '夜にバーで', '夜に居酒屋で',
+  'ランチにレストランで', 'ディナーにレストランで',
+  '映画を観てから食事', '昼に公園散歩', '夕方に美術館・展示で',
+  '水族館・動物園', '夜景スポット', 'ショッピング',
+  'アウトドア・BBQ', 'ドライブ', '週末にランチ',
+]
+
+const GENDER_LABEL: Record<string, string> = { mens: 'メンズ', womens: 'レディース' }
 
 interface MyPageProps {
   likedUsers: User[]
@@ -104,6 +112,10 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
 
   const handleSave = async () => {
     if (!editForm) return
+    if (!editForm.gender) {
+      setSaveError('性別を設定してください')
+      return
+    }
     setSaving(true)
     setSaveError(null)
     const result = await updateProfile(editForm)
@@ -132,14 +144,28 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
   const discardField = () => setEditingField(null)
 
   const FIELD_LABELS: Partial<Record<keyof Profile, string>> = {
-    name: '名前', bio: '自己紹介',
+    name: '名前', bio: '自己紹介', gender: '性別',
     preferredLine: '好きな沿線', preferredMeetingArea: '出会いたいエリア',
     height: '身長', bodyType: '体型',
-    frequentStation: 'よく遊ぶ駅', firstDateStation: '最初のデート希望場所',
+    frequentStation: 'よく遊ぶ駅', firstDateStation: '最初のデート',
   }
 
   const renderFieldInput = () => {
     switch (editingField) {
+      case 'gender':
+        return (
+          <div className="mpe-gender-options">
+            {(['mens', 'womens'] as const).map(g => (
+              <button
+                key={g}
+                className={`mpe-gender-btn ${fieldDraft === g ? 'active' : ''}`}
+                onClick={() => setFieldDraft(g)}
+              >
+                {GENDER_LABEL[g]}
+              </button>
+            ))}
+          </div>
+        )
       case 'name':
         return (
           <input
@@ -218,7 +244,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
           <select className="mpe-field-select" value={fieldDraft as string ?? ''}
             onChange={e => setFieldDraft(e.target.value || undefined)}>
             <option value="">選択してください</option>
-            {MAJOR_STATIONS.map(s => <option key={s} value={s}>{s}周辺</option>)}
+            {FIRST_DATE_SITUATIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         )
       default:
@@ -278,6 +304,18 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                 <i className="ri-arrow-right-s-line mpe-tile-chevron" />
               </div>
 
+              {/* 性別 */}
+              <div className="mpe-tile mpe-tile-full" onClick={() => openField('gender', editForm?.gender)}>
+                <div className="mpe-tile-inner">
+                  <span className="mpe-tile-icon">⚧</span>
+                  <div className="mpe-tile-texts">
+                    <span className="mpe-tile-label">性別 <span className="mpe-required">必須</span></span>
+                    <span className="mpe-tile-value">{editForm?.gender ? GENDER_LABEL[editForm.gender] : '未設定'}</span>
+                  </div>
+                </div>
+                <i className="ri-arrow-right-s-line mpe-tile-chevron" />
+              </div>
+
               {/* 身長 */}
               <div className="mpe-tile" onClick={() => openField('height', editForm?.height)}>
                 <span className="mpe-tile-icon">📏</span>
@@ -317,7 +355,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
               <div className="mpe-tile" onClick={() => openField('firstDateStation', editForm?.firstDateStation)}>
                 <span className="mpe-tile-icon">💑</span>
                 <span className="mpe-tile-label">最初のデート</span>
-                <span className="mpe-tile-value">{editForm?.firstDateStation ? `${editForm.firstDateStation}周辺` : '—'}</span>
+                <span className="mpe-tile-value">{editForm?.firstDateStation ?? '—'}</span>
               </div>
 
               {/* 自己紹介 – フル幅 */}
@@ -367,7 +405,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                 <div className="field-modal" onClick={e => e.stopPropagation()}>
                   <div className="field-modal-header">
                     <span className="field-modal-icon">{
-                      ({ name:'👤', bio:'✏️', preferredLine:'🚃',
+                      ({ name:'👤', bio:'✏️', gender:'⚧', preferredLine:'🚃',
                         preferredMeetingArea:'📍', height:'📏', bodyType:'👕',
                         frequentStation:'🗺️', firstDateStation:'💑' } as Record<string, string>)[editingField]
                     }</span>
@@ -414,13 +452,12 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
                   { icon: 'ri-user-fill', label: '体型',           value: profile?.bodyType },
                   { icon: 'ri-dice-fill', label: 'ランダムマッチ',  value: profile?.randomMatchEnabled !== false ? '対象に含める' : '対象から外す' },
                   { icon: 'ri-map-2-fill', label: 'よく遊ぶ駅',     value: profile?.frequentStation ? `${profile.frequentStation}駅` : undefined },
-                  { icon: 'ri-heart-2-fill', label: '最初のデート希望場所', value: profile?.firstDateStation ? `${profile.firstDateStation}周辺` : undefined },
+                  { icon: 'ri-heart-2-fill', label: '最初のデート', value: profile?.firstDateStation },
                   { icon: 'ri-mail-fill', label: 'メール',         value: profile?.email },
                 ].filter(({ value }) => !!value).map(({ icon, label, value }) => (
                   <div key={label} className="pd-info-item">
-                    <span className="pd-info-icon"><i className={icon}></i></span>
                     <div className="pd-info-text">
-                      <span className="pd-info-label">{label}</span>
+                      <span className="pd-info-label"><span className="pd-info-icon"><i className={icon}></i></span>{label}</span>
                       <span className="pd-info-value">{value}</span>
                     </div>
                   </div>
@@ -522,7 +559,7 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
       {/* ── ツール・設定 ── */}
       <div className="mypage-settings">
         <h3>ツール</h3>
-        <button className="settings-button fitcheck-open" onClick={onOpenFitCheck}>👗 Fit Check</button>
+        <button className="settings-button fitcheck-open" onClick={onOpenFitCheck}>👗 デートコーデ相談</button>
       </div>
       <div className="mypage-settings">
         <h3>設定</h3>

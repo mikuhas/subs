@@ -10,4 +10,6 @@ export interface User {
   distanceKm: number
   sentLikeCount?: number
   sentSkipCount?: number
+  firstDateStation?: string
+  bodyType?: string
 }

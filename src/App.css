@@ -167,6 +167,242 @@ h1 {
   font-size: 1.3rem;
 }
 
+/* 検索ヘッダー */
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.search-header h2 {
+  margin: 0;
+}
+
+.search-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: white;
+  border: 2px solid #11C5C8;
+  color: #11C5C8;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+}
+
+.search-filter-badge {
+  background: #FF6E5E;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* アクティブフィルターチップ */
+.search-active-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.search-active-chip {
+  padding: 4px 10px;
+  background: #e0f7f7;
+  color: #0a9a9c;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* 検索モーダル */
+.search-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.search-modal {
+  width: 100%;
+  max-height: 85vh;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slide-up 0.25s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.search-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.search-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #333;
+}
+
+.search-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #888;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.search-modal-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0 20px;
+}
+
+.search-modal-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-modal-section:last-child {
+  border-bottom: none;
+}
+
+.search-modal-section-title {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.search-modal-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.search-modal-select:focus {
+  outline: none;
+  border-color: #11C5C8;
+}
+
+.search-modal-age-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-modal-age-input {
+  width: 72px;
+  padding: 10px 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.search-modal-age-input:focus {
+  outline: none;
+  border-color: #11C5C8;
+}
+
+.search-modal-age-sep {
+  color: #888;
+  font-weight: 500;
+}
+
+.search-modal-age-unit {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.search-modal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-modal-chip {
+  padding: 7px 14px;
+  background: #f3f4f6;
+  color: #555;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.search-modal-chip.active {
+  background: #e0f7f7;
+  color: #0a9a9c;
+  border-color: #11C5C8;
+  font-weight: 600;
+}
+
+.search-modal-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.search-modal-reset {
+  flex: 1;
+  padding: 12px;
+  background: white;
+  border: 2px solid #ddd;
+  color: #888;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-modal-apply {
+  flex: 2;
+  padding: 12px;
+  background: linear-gradient(135deg, #11C5C8, #0ea5a8);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .input-group {
   display: flex;
   align-items: center;
@@ -913,6 +1149,11 @@ h1 {
   font-weight: 500;
 }
 
+.pd-badge-date {
+  background: #fce7f3;
+  color: #be185d;
+}
+
 /* セクション */
 .pd-section {
   padding: 16px 18px 0;
@@ -971,7 +1212,7 @@ h1 {
   padding: 12px;
 }
 
-.pd-info-icon { font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+.pd-info-icon { font-size: 1.2rem; line-height: 1; flex-shrink: 0; margin-right:4px; }
 
 .pd-info-text {
   display: flex;
@@ -1495,6 +1736,92 @@ h1 {
 .login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(17, 197, 200, 0.5);
+}
+
+/* ログイン・登録タブ */
+.login-mode-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #11C5C8;
+}
+
+.login-mode-tab {
+  flex: 1;
+  padding: 10px;
+  background: white;
+  border: none;
+  color: #11C5C8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.login-mode-tab.active {
+  background: #11C5C8;
+  color: white;
+}
+
+/* 登録フォーム 性別ボタン */
+.login-gender-options {
+  display: flex;
+  gap: 10px;
+}
+
+.login-gender-btn {
+  flex: 1;
+  padding: 10px;
+  background: #f3f4f6;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+
+.login-gender-btn.active {
+  background: #e0f7f7;
+  border-color: #11C5C8;
+  color: #0a9a9c;
+  font-weight: 700;
+}
+
+/* MyPage 性別ボタン */
+.mpe-gender-options {
+  display: flex;
+  gap: 12px;
+}
+
+.mpe-gender-btn {
+  flex: 1;
+  padding: 12px;
+  background: #f3f4f6;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+
+.mpe-gender-btn.active {
+  background: #e0f7f7;
+  border-color: #11C5C8;
+  color: #0a9a9c;
+  font-weight: 700;
+}
+
+.mpe-required {
+  font-size: 0.72rem;
+  color: #FF6E5E;
+  font-weight: 600;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .login-note {

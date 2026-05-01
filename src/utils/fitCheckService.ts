@@ -12,10 +12,10 @@ export type ProfileInfo = {
   bodyType?: string
   preferredColors?: string[]
   budget?: string
-  gender?: 'mens' | 'womens' | 'kids'
+  gender?: 'mens' | 'womens'
 }
 
-const AVERAGE_HEIGHT: Record<string, number> = { mens: 171, womens: 158, kids: 140 }
+const AVERAGE_HEIGHT: Record<string, number> = { mens: 171, womens: 158 }
 
 function estimateSize(height?: number, bodyType?: string, gender?: ProfileInfo['gender']): string {
   const bulky = bodyType === 'がっちり' || bodyType === '筋肉質'
@@ -26,7 +26,7 @@ function estimateSize(height?: number, bodyType?: string, gender?: ProfileInfo['
   return bulky ? 'XXL' : 'XL'
 }
 
-const GENDER_CODE: Record<string, string> = { mens: 'men', womens: 'women', kids: 'kids' }
+const GENDER_CODE: Record<string, string> = { mens: 'men', womens: 'women' }
 
 // ユニクロ・GU 共通カラーコード（キーワード先頭の色名と照合）
 const COLOR_CODE: [string, string][] = [
@@ -267,7 +267,6 @@ export function summarizeOutfitForPrompt(text: string, patternIndex = 0): string
 const GENDER_PROMPT: Record<string, string> = {
   mens: 'single male model',
   womens: 'single female model',
-  kids: 'single child model',
 }
 
 function extractPatternTitle(text: string, patternIndex: number): string {
@@ -280,7 +279,7 @@ function extractPatternTitle(text: string, patternIndex: number): string {
 
 export function buildOutfitIllustrationUrl(
   outfitDescription: string,
-  gender?: 'mens' | 'womens' | 'kids',
+  gender?: 'mens' | 'womens',
   patternIndex = 0,
   seed?: number,
 ): string {

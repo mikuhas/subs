@@ -73,6 +73,9 @@ export const ProfileDetail = ({ user, onBack, onOpenBoard }: ProfileDetailProps)
         <div className="pd-badges">
           <span className="pd-badge">🚃 {user.line}</span>
           <span className="pd-badge">{getDistanceLabel(user.distanceKm)}</span>
+          {user.firstDateStation && (
+            <span className="pd-badge pd-badge-date">💑 {user.firstDateStation}</span>
+          )}
         </div>
 
         {/* 名前・年齢 */}

@@ -3,12 +3,13 @@ import logo from './assets/logo.png'
 import { useState, useEffect } from 'react'
 import { errorEmitter } from './lib/errorEmitter'
 import { ErrorModal } from './components/ui/ErrorModal'
-import { useMatchingApp } from './composables/useMatchingApp'
+import { useMatchingApp } from './hooks/useMatchingApp'
 import { TabNavigation } from './components/ui/TabNavigation'
-import { SearchSection } from './components/ui/SearchSection'
+import { SearchSection } from './components/pages/search/SearchSection'
+import { SearchModal } from './components/pages/search/SearchModal'
 import { ProfileCard } from './components/ui/ProfileCard'
 import { ProfileDetail } from './components/ui/ProfileDetail'
-import { ActivityPage } from './components/layouts/ActivityPage'
+import { ActivityPage } from './components/pages/activity/ActivityPage'
 import { MyPage } from './components/pages/mypage/MyPage'
 import { CommunityPage } from './components/pages/community/CommunityPage'
 import { MessagesPage } from './components/pages/messages/MessagesPage'
@@ -40,6 +41,16 @@ function MainApp() {
     setSelectedLine,
     selectedCommunityId,
     setSelectedCommunityId,
+    ageMin,
+    setAgeMin,
+    ageMax,
+    setAgeMax,
+    selectedBodyType,
+    setSelectedBodyType,
+    selectedFirstDateSituation,
+    setSelectedFirstDateSituation,
+    activeFilterCount,
+    resetFilters,
     hasSearched,
     noResults,
     clearNoResults,
@@ -57,6 +68,7 @@ function MainApp() {
   } = useMatchingApp(profile?.age)
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showSearchModal, setShowSearchModal] = useState(false)
   const [boardUser, setBoardUser] = useState<User | null>(null)
   const [conversationUser, setConversationUser] = useState<User | null>(null)
   const [showFitCheck, setShowFitCheck] = useState(false)
@@ -94,11 +106,15 @@ function MainApp() {
             {activeTab === 'search' && (
               <>
                 <SearchSection
-                  profileAge={profile?.age}
-                  selectedLine={selectedLine}
-                  onLineChange={setSelectedLine}
-                  selectedCommunityId={selectedCommunityId}
-                  onCommunityChange={setSelectedCommunityId}
+                  activeFilterCount={activeFilterCount}
+                  activeFilterChips={[
+                    selectedLine && `🚃 ${selectedLine}`,
+                    selectedCommunityId !== '' && `👥 コミュニティ`,
+                    (ageMin !== '' || ageMax !== '') && `🎂 ${ageMin || '—'}〜${ageMax || '—'}歳`,
+                    selectedBodyType && `👕 ${selectedBodyType}`,
+                    selectedFirstDateSituation && `💑 ${selectedFirstDateSituation}`,
+                  ].filter(Boolean) as string[]}
+                  onOpenModal={() => setShowSearchModal(true)}
                   onSearch={findRandomUser}
                 />
                 <ProfileCard
@@ -139,7 +155,7 @@ function MainApp() {
               showFitCheck
                 ? (
                   <div>
-                    <button className="fitcheck-back-btn" onClick={() => setShowFitCheck(false)}>← マイページに戻る</button>
+                    <button className="fitcheck-back-btn" onClick={() => setShowFitCheck(false)}>← マイページへ戻る</button>
                     <FitCheckPage />
                   </div>
                 )
@@ -155,6 +171,26 @@ function MainApp() {
           </>
         )}
       </main>
+
+      {showSearchModal && (
+        <SearchModal
+          selectedLine={selectedLine}
+          selectedCommunityId={selectedCommunityId}
+          ageMin={ageMin}
+          ageMax={ageMax}
+          selectedBodyType={selectedBodyType}
+          selectedFirstDateSituation={selectedFirstDateSituation}
+          onLineChange={setSelectedLine}
+          onCommunityChange={setSelectedCommunityId}
+          onAgeMinChange={setAgeMin}
+          onAgeMaxChange={setAgeMax}
+          onBodyTypeChange={setSelectedBodyType}
+          onFirstDateSituationChange={setSelectedFirstDateSituation}
+          onReset={resetFilters}
+          onApply={() => { setShowSearchModal(false); findRandomUser() }}
+          onClose={() => setShowSearchModal(false)}
+        />
+      )}
 
       {selectedUser && (
         <ProfileDetail

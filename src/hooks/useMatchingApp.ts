@@ -9,6 +9,7 @@ const mapApiUser = (u: {
   imageUrl?: string | null; line?: string | null
   communityIds: number[]; distanceKm?: number | null
   sentLikeCount?: number | null; sentSkipCount?: number | null
+  firstDateStation?: string | null; bodyType?: string | null
 }): User => ({
   id: parseInt(u.id),
   name: u.name,
@@ -20,6 +21,8 @@ const mapApiUser = (u: {
   distanceKm: u.distanceKm ?? 0,
   sentLikeCount: u.sentLikeCount ?? 0,
   sentSkipCount: u.sentSkipCount ?? 0,
+  firstDateStation: u.firstDateStation ?? undefined,
+  bodyType: u.bodyType ?? undefined,
 })
 
 // profileAge は後方互換のため残すが API フィルタは不要（サーバー側で処理）
@@ -34,10 +37,17 @@ export const useMatchingApp = (_profileAge?: number) => {
   const matchesLoaded = useRef(false)
   const [newMatch, setNewMatch]         = useState<User | null>(null)
   const [activeTab, setActiveTab]       = useState<'search' | 'activity' | 'messages' | 'community' | 'mypage'>('search')
+
+  // フィルター state
   const [selectedLine, setSelectedLine] = useState('')
   const [selectedCommunityId, setSelectedCommunityId] = useState<number | ''>('')
-  const [hasSearched, setHasSearched]   = useState(false)
-  const [noResults, setNoResults]       = useState(false)
+  const [ageMin, setAgeMin] = useState<number | ''>('')
+  const [ageMax, setAgeMax] = useState<number | ''>('')
+  const [selectedBodyType, setSelectedBodyType] = useState('')
+  const [selectedFirstDateSituation, setSelectedFirstDateSituation] = useState('')
+
+  const [hasSearched, setHasSearched] = useState(false)
+  const [noResults, setNoResults]     = useState(false)
 
   const { data: candidatesData, refetch } = useQuery(CANDIDATES, {
     skip: !isLoggedIn,
@@ -64,8 +74,11 @@ export const useMatchingApp = (_profileAge?: number) => {
 
   const receivedLikes: User[] = useMemo(() => {
     if (!receivedLikesData?.receivedLikes) return []
-    return receivedLikesData.receivedLikes.map(mapApiUser)
-  }, [receivedLikesData])
+    const matchedIds = new Set(matchedUsers.map(u => u.id))
+    return receivedLikesData.receivedLikes
+      .map(mapApiUser)
+      .filter((u: User) => !matchedIds.has(u.id))
+  }, [receivedLikesData, matchedUsers])
 
   const [swipeUserMutation] = useMutation(SWIPE_USER)
 
@@ -74,12 +87,28 @@ export const useMatchingApp = (_profileAge?: number) => {
     return candidatesData.candidates.map(mapApiUser)
   }, [candidatesData])
 
-  // ライン・コミュニティのフィルタはフロントエンドで適用
-  const filteredCandidates = useMemo(() => allCandidates.filter(u => {
-    if (selectedLine && u.line !== selectedLine) return false
-    if (selectedCommunityId && !u.communityIds.includes(selectedCommunityId as number)) return false
-    return true
-  }), [allCandidates, selectedLine, selectedCommunityId])
+  // 全フィルタ + マッチ済み除外
+  const filteredCandidates = useMemo(() => {
+    const matchedIds = new Set(matchedUsers.map(u => u.id))
+    return allCandidates.filter(u => {
+      if (matchedIds.has(u.id)) return false
+      if (ageMin !== '' && u.age < ageMin) return false
+      if (ageMax !== '' && u.age > ageMax) return false
+      if (selectedLine && u.line !== selectedLine) return false
+      if (selectedCommunityId && !u.communityIds.includes(selectedCommunityId as number)) return false
+      if (selectedBodyType && u.bodyType !== selectedBodyType) return false
+      if (selectedFirstDateSituation && u.firstDateStation !== selectedFirstDateSituation) return false
+      return true
+    })
+  }, [allCandidates, matchedUsers, ageMin, ageMax, selectedLine, selectedCommunityId, selectedBodyType, selectedFirstDateSituation])
+
+  const activeFilterCount = useMemo(() => [
+    !!selectedLine,
+    selectedCommunityId !== '',
+    ageMin !== '' || ageMax !== '',
+    !!selectedBodyType,
+    !!selectedFirstDateSituation,
+  ].filter(Boolean).length, [selectedLine, selectedCommunityId, ageMin, ageMax, selectedBodyType, selectedFirstDateSituation])
 
   const currentUser = filteredCandidates[currentIndex] ?? null
 
@@ -113,17 +142,32 @@ export const useMatchingApp = (_profileAge?: number) => {
     setCurrentIndex(0)
     setNoResults(false)
     const { data } = await refetch()
-    const raw: { line?: string | null; communityIds: number[] }[] = data?.candidates ?? []
-    const visible = raw.filter(u => {
+    const raw: { line?: string | null; communityIds: number[]; age: number; bodyType?: string | null; firstDateStation?: string | null }[] = data?.candidates ?? []
+    const matchedIds = new Set(matchedUsers.map(u => u.id))
+    const visible = raw.filter((u: { id: string; line?: string | null; communityIds: number[]; age: number; bodyType?: string | null; firstDateStation?: string | null }) => {
+      if (matchedIds.has(parseInt(u.id))) return false
+      if (ageMin !== '' && u.age < ageMin) return false
+      if (ageMax !== '' && u.age > ageMax) return false
       if (selectedLine && u.line !== selectedLine) return false
       if (selectedCommunityId !== '' && !u.communityIds.includes(selectedCommunityId as number)) return false
+      if (selectedBodyType && u.bodyType !== selectedBodyType) return false
+      if (selectedFirstDateSituation && u.firstDateStation !== selectedFirstDateSituation) return false
       return true
     })
     if (visible.length === 0) setNoResults(true)
-  }, [refetch, selectedLine, selectedCommunityId])
+  }, [refetch, matchedUsers, ageMin, ageMax, selectedLine, selectedCommunityId, selectedBodyType, selectedFirstDateSituation])
 
   const clearNoResults = useCallback(() => setNoResults(false), [])
   const findRandomMatchUser = findRandomUser
+
+  const resetFilters = useCallback(() => {
+    setSelectedLine('')
+    setSelectedCommunityId('')
+    setAgeMin('')
+    setAgeMax('')
+    setSelectedBodyType('')
+    setSelectedFirstDateSituation('')
+  }, [])
 
   const doRandomMatch = useCallback(() => {
     if (!currentUser) return
@@ -172,6 +216,16 @@ export const useMatchingApp = (_profileAge?: number) => {
     setSelectedLine,
     selectedCommunityId,
     setSelectedCommunityId,
+    ageMin,
+    setAgeMin,
+    ageMax,
+    setAgeMax,
+    selectedBodyType,
+    setSelectedBodyType,
+    selectedFirstDateSituation,
+    setSelectedFirstDateSituation,
+    activeFilterCount,
+    resetFilters,
     hasSearched,
     noResults,
     clearNoResults,
@@ -188,7 +242,10 @@ export const useMatchingApp = (_profileAge?: number) => {
     removeMatched,
   }), [
     currentUser, likedUsers, skippedUsers, visibleMatches, receivedLikes, newMatch,
-    activeTab, selectedLine, selectedCommunityId, hasSearched, noResults, clearNoResults,
+    activeTab, selectedLine, selectedCommunityId,
+    ageMin, ageMax, selectedBodyType, selectedFirstDateSituation,
+    activeFilterCount, resetFilters,
+    hasSearched, noResults, clearNoResults,
     findRandomUser, findRandomMatchUser, doRandomMatch,
     handleLike, handleSkip, handleLikeBack, clearNewMatch,
     dismissReceivedLike, removeLiked, removeSkipped, removeMatched,

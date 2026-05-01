@@ -178,8 +178,8 @@ export const FitCheckPage = () => {
 
   return (
     <div className="fitcheck-container">
-      <h2>Fit Check</h2>
-      <p className="fitcheck-desc">写真をアップロードして、AIが似合う服装を提案します</p>
+      <h2>デートコーデ相談</h2>
+      <p className="fitcheck-desc">写真を選んで条件を入れるだけで、AIがデートにぴったりなコーデを提案してくれるよ！</p>
 
       <div className="fitcheck-section">
         <div className="mypage-card-image">
@@ -231,7 +231,7 @@ export const FitCheckPage = () => {
       </div>
 
       <div className="fitcheck-section">
-        <label className="fitcheck-label">スタイル</label>
+        <label className="fitcheck-label">どんな雰囲気がいい？</label>
         <div className="fitcheck-style-grid">
           {STYLE_OPTIONS.map(s => (
             <button key={s} className={`fitcheck-style-btn ${style === s ? 'active' : ''}`} onClick={() => setStyle(s)}>{s}</button>
@@ -240,7 +240,7 @@ export const FitCheckPage = () => {
       </div>
 
       <div className="fitcheck-section">
-        <label className="fitcheck-label">好みの色（複数選択可）</label>
+        <label className="fitcheck-label">好きな色は？（複数OK）</label>
         <div className="fitcheck-style-grid">
           {COLOR_OPTIONS.map(c => (
             <button
@@ -253,7 +253,7 @@ export const FitCheckPage = () => {
       </div>
 
       <div className="fitcheck-section">
-        <label className="fitcheck-label">予算帯</label>
+        <label className="fitcheck-label">予算感は？</label>
         <div className="fitcheck-style-grid">
           {BUDGET_OPTIONS.map(b => (
             <button key={b} className={`fitcheck-style-btn ${budget === b ? 'active' : ''}`} onClick={() => setBudget(prev => prev === b ? '' : b)}>{b}</button>
@@ -262,14 +262,14 @@ export const FitCheckPage = () => {
       </div>
 
       <button className="fitcheck-submit" onClick={handleSubmit} disabled={!activeBase64 || loading}>
-        {loading ? '生成中...' : '似合う服を提案する'}
+        {loading ? 'AIがコーデを考え中...✨' : 'デートコーデを提案してもらう'}
       </button>
 
       {error && <p className="fitcheck-error">{error}</p>}
 
       {result && (
         <div className="fitcheck-result">
-          <h3>提案結果</h3>
+          <h3>AIからのコーデ提案</h3>
           {result.imageBase64 && (
             <img src={`data:image/png;base64,${result.imageBase64}`} alt="コーデ提案" className="fitcheck-result-img" />
           )}
@@ -282,13 +282,13 @@ export const FitCheckPage = () => {
                   <MarkdownView text={patternText} />
                 </div>
                 <div className="fitcheck-illust-pattern">
-                  <p className="fitcheck-illust-pattern-label">パターン {i + 1} のイラスト</p>
+                  <p className="fitcheck-illust-pattern-label">コーデ {i + 1} のビジュアル</p>
                   {illustrationLoadings[i] ? (
                     <div className="fitcheck-illust-loading">
                       <div className="fitcheck-illust-emojis">
                         <span><i className="ri-t-shirt-line"></i></span><span><i className="ri-sparkling-line"></i></span><span><i className="ri-shirt-line"></i></span><span><i className="ri-sparkling-line"></i></span><span><i className="ri-footprint-line"></i></span>
                       </div>
-                      <p className="fitcheck-illust-loading-text">コーデをイラスト化中...</p>
+                      <p className="fitcheck-illust-loading-text">イラストを描いてるよ...🎨</p>
                     </div>
                   ) : (
                     <button
@@ -296,7 +296,7 @@ export const FitCheckPage = () => {
                       onClick={() => handleGenerateIllustration(i)}
                       disabled={isAnyIllustrationLoading}
                     >
-                      <i className="ri-palette-line"></i> イラストを生成
+                      <i className="ri-palette-line"></i> イラストを見てみる
                     </button>
                   )}
                   {illustrationErrors[i] && (

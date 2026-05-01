@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useMutation, useLazyQuery } from '@apollo/client'
 import { Profile } from '../types/profile'
-import { SIGN_IN, ME, UPDATE_PROFILE } from '../lib/graphql/operations'
+import { SIGN_IN, SIGN_UP, ME, UPDATE_PROFILE } from '../lib/graphql/operations'
 
 interface AuthContextType {
   isLoggedIn: boolean
   initializing: boolean
   profile: Profile | null
   login: (email: string, password: string) => Promise<{ success: boolean; errors: string[] }>
+  register: (email: string, password: string, name: string, age: number, gender: 'mens' | 'womens') => Promise<{ success: boolean; errors: string[] }>
   logout: () => void
   updateProfile: (profile: Profile) => Promise<{ success: boolean; errors: string[] }>
 }
@@ -16,7 +17,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 const mapUserToProfile = (user: {
   id: string; name: string; age: number; bio?: string | null; imageUrl?: string | null
-  gender?: string | null; preferredLine?: string | null; preferredMeetingArea?: string | null
+  gender: string; preferredLine?: string | null; preferredMeetingArea?: string | null
   height?: number | null; bodyType?: string | null; randomMatchEnabled?: boolean
   frequentStation?: string | null; firstDateStation?: string | null
   userImages?: { id: string; imageUrl: string; position: number }[] | null
@@ -27,7 +28,7 @@ const mapUserToProfile = (user: {
   bio: user.bio ?? '',
   email,
   image: user.imageUrl ?? '',
-  gender: user.gender as Profile['gender'],
+  gender: user.gender as 'mens' | 'womens',
   preferredLine: user.preferredLine ?? undefined,
   preferredMeetingArea: user.preferredMeetingArea ?? undefined,
   height: user.height ?? undefined,
@@ -50,6 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null)
 
   const [signIn] = useMutation(SIGN_IN)
+  const [signUp] = useMutation(SIGN_UP)
   const [updateProfileMutation] = useMutation(UPDATE_PROFILE)
   const [fetchMe] = useLazyQuery(ME)
 
@@ -85,6 +87,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, errors: ['通信エラーが発生しました'] }
     }
     const result = data?.signIn
+    if (!result) return { success: false, errors: ['通信エラーが発生しました'] }
+    if (result.errors.length > 0) return { success: false, errors: result.errors }
+
+    localStorage.setItem('auth_token', result.token)
+    localStorage.setItem('auth_email', email)
+    setProfile(mapUserToProfile(result.user, email))
+    setIsLoggedIn(true)
+    return { success: true, errors: [] }
+  }
+
+  const register = async (email: string, password: string, name: string, age: number, gender: 'mens' | 'womens') => {
+    let data: Awaited<ReturnType<typeof signUp>>['data']
+    try {
+      const res = await signUp({ variables: { email, password, name, age, gender } })
+      data = res.data
+    } catch {
+      return { success: false, errors: ['通信エラーが発生しました'] }
+    }
+    const result = data?.signUp
     if (!result) return { success: false, errors: ['通信エラーが発生しました'] }
     if (result.errors.length > 0) return { success: false, errors: result.errors }
 
@@ -135,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, initializing, profile, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ isLoggedIn, initializing, profile, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

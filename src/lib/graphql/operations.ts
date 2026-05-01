@@ -17,8 +17,8 @@ export const SIGN_IN = gql`
 `
 
 export const SIGN_UP = gql`
-  mutation SignUp($email: String!, $password: String!, $name: String!, $age: Int!) {
-    signUp(input: { email: $email, password: $password, name: $name, age: $age }) {
+  mutation SignUp($email: String!, $password: String!, $name: String!, $age: Int!, $gender: String!) {
+    signUp(input: { email: $email, password: $password, name: $name, age: $age, gender: $gender }) {
       token
       user { id name age bio imageUrl gender line }
       errors
@@ -120,7 +120,7 @@ export const CANDIDATES = gql`
   query Candidates {
     candidates {
       id name age bio imageUrl line communityIds distanceKm
-      sentLikeCount sentSkipCount
+      sentLikeCount sentSkipCount firstDateStation bodyType
     }
   }
 `
@@ -129,7 +129,7 @@ export const RECEIVED_LIKES = gql`
   query ReceivedLikes {
     receivedLikes {
       id name age bio imageUrl line communityIds distanceKm
-      sentLikeCount sentSkipCount
+      sentLikeCount sentSkipCount firstDateStation bodyType
     }
   }
 `
@@ -138,7 +138,7 @@ export const MATCHES = gql`
   query Matches {
     matches {
       id
-      partner { id name age bio imageUrl line communityIds distanceKm sentLikeCount sentSkipCount }
+      partner { id name age bio imageUrl line communityIds distanceKm sentLikeCount sentSkipCount firstDateStation bodyType }
       matchedAt
     }
   }

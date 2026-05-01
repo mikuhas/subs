@@ -27,7 +27,10 @@
       "Bash(docker volume *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'candidates: {len\\(d[\\\\\"data\\\\\"][\\\\\"candidates\\\\\"]\\)}件'\\)\")",
       "Bash(docker exec *)",
-      "Bash(grep -E \"\\\\.tsx$\")"
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(make ls-all *)",
+      "Bash(npx vite *)",
+      "Bash(dir /b \"C:\\\\Users\\\\hikaru\\\\Desktop\\\\workspace\\\\subs\")"
     ]
   }
 }

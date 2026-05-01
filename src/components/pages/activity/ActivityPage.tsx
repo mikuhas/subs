@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { User } from '../../types/user'
-import { getDistanceLabel } from '../../utils/distance'
-import { mockCommunities } from '../../data/communities'
+import { User } from '../../../types/user'
+import { getDistanceLabel } from '../../../utils/distance'
+import { mockCommunities } from '../../../data/communities'
 
 const RANDOM_MATCH_LIMIT = 3
 const STORAGE_KEY = 'randomMatch'
