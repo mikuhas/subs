@@ -15,6 +15,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+const isMock = import.meta.env.VITE_USE_MOCK === 'true'
+
 const mapUserToProfile = (user: {
   id: string; name: string; age: number; bio?: string | null; imageUrl?: string | null
   gender: string; preferredLine?: string | null; preferredMeetingArea?: string | null
@@ -43,7 +45,52 @@ const mapUserToProfile = (user: {
   })),
 })
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+const MOCK_PROFILE: Profile = {
+  id: 1,
+  name: 'テストユーザー',
+  age: 25,
+  bio: 'モック用のプロフィールです。',
+  email: 'test@example.com',
+  image: '',
+  gender: 'mens',
+  randomMatchEnabled: true,
+  userImages: [],
+}
+
+const MockAuthProvider = ({ children }: { children: ReactNode }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  const login = async (_email: string, _password: string) => {
+    setProfile(MOCK_PROFILE)
+    setIsLoggedIn(true)
+    return { success: true, errors: [] }
+  }
+
+  const register = async (_email: string, _password: string, name: string, age: number, gender: 'mens' | 'womens') => {
+    setProfile({ ...MOCK_PROFILE, name, age, gender })
+    setIsLoggedIn(true)
+    return { success: true, errors: [] }
+  }
+
+  const logout = () => {
+    setIsLoggedIn(false)
+    setProfile(null)
+  }
+
+  const updateProfile = async (newProfile: Profile) => {
+    setProfile(newProfile)
+    return { success: true, errors: [] }
+  }
+
+  return (
+    <AuthContext.Provider value={{ isLoggedIn, initializing: false, profile, login, register, logout, updateProfile }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+const RealAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [initializing, setInitializing] = useState(
     () => !!localStorage.getItem('auth_token'),
@@ -161,6 +208,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   )
 }
+
+export const AuthProvider = isMock ? MockAuthProvider : RealAuthProvider
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext)

@@ -21,6 +21,8 @@ interface MessageContextType {
 
 const MessageContext = createContext<MessageContextType | null>(null)
 
+const isMock = import.meta.env.VITE_USE_MOCK === 'true'
+
 export const MessageProvider = ({ children }: { children: ReactNode }) => {
   const { profile } = useAuth()
   const [conversations, setConversations] = useState<Record<number, Message[]>>({})
@@ -28,14 +30,15 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
 
   const sendMessage = useCallback(async (userId: number, text: string) => {
     if (!profile?.id) return
-    // 楽観的 UI: Firestore の onSnapshot が届く前に即時表示
     const optimistic: Message = { id: `opt_${Date.now()}`, text, fromMe: true, timestamp: Date.now() }
     setConversations(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []), optimistic] }))
-    await sendFirestoreMessage(profile.id, userId, text)
+    if (!isMock) {
+      await sendFirestoreMessage(profile.id, userId, text)
+    }
   }, [profile?.id])
 
   const subscribeToConversation = useCallback((userId: number): (() => void) => {
-    if (!profile?.id) return () => {}
+    if (!profile?.id || isMock) return () => {}
     return subscribeToMessages(profile.id, userId, msgs => {
       setConversations(prev => ({ ...prev, [userId]: msgs }))
     })

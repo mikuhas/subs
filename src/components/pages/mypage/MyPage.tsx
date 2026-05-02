@@ -269,8 +269,14 @@ export const MyPage = ({ likedUsers, skippedUsers, onRemoveLiked, onRemoveSkippe
             {/* アバター + フォト選択 */}
             <div className="mpe-avatar-section">
               <div className="mpe-avatar-wrapper">
-                <img src={editForm?.image} alt="プロフィール" className="mpe-avatar-img" />
-                <span className="mpe-avatar-camera">📷</span>
+                {editForm && editForm.image ? (
+                  <>
+                    <img src={editForm.image} alt="プロフィール" className="mpe-avatar-img" />
+                    <span className="mpe-avatar-camera">📷</span>
+                  </>
+                ) : (
+                  <div className="mpe-avatar-placeholder">No Image</div>
+                )}
               </div>
               <div className="mpe-photo-strip">
                 {userImages.length === 0 && (
