@@ -26,7 +26,6 @@ export const ProfileCard = ({
     if (!e.animationName.startsWith('card-swipe')) return
     if (animDir === 'like') onLike()
     else if (animDir === 'skip') onSkip()
-    setAnimDir(null)
   }
 
   if (!user) {

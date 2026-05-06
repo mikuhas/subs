@@ -110,7 +110,7 @@ function MainApp() {
                   activeFilterChips={[
                     selectedLine && `🚃 ${selectedLine}`,
                     selectedCommunityId !== '' && `👥 コミュニティ`,
-                    (ageMin !== '' || ageMax !== '') && `🎂 ${ageMin || '—'}〜${ageMax || '—'}歳`,
+                    (ageMin !== '' || ageMax !== '') && `🎂 ${ageMin || ''}〜${ageMax || ''}歳`,
                     selectedBodyType && `👕 ${selectedBodyType}`,
                     selectedFirstDateSituation && `💑 ${selectedFirstDateSituation}`,
                   ].filter(Boolean) as string[]}
@@ -118,6 +118,7 @@ function MainApp() {
                   onSearch={findRandomUser}
                 />
                 <ProfileCard
+                  key={currentUser?.id ?? 'empty'}
                   user={currentUser}
                   hasSearched={hasSearched}
                   onLike={handleLike}

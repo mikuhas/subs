@@ -77,7 +77,6 @@ export const SearchModal = ({
                 type="number"
                 min={18}
                 max={99}
-                placeholder="下限"
                 value={ageMin}
                 onChange={e => onAgeMinChange(e.target.value ? Number(e.target.value) : '')}
               />
@@ -87,7 +86,6 @@ export const SearchModal = ({
                 type="number"
                 min={18}
                 max={99}
-                placeholder="上限"
                 value={ageMax}
                 onChange={e => onAgeMaxChange(e.target.value ? Number(e.target.value) : '')}
               />
